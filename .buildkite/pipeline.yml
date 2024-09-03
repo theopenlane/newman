@@ -1,0 +1,24 @@
+env:
+  APP_NAME: ${BUILDKITE_PIPELINE_SLUG}
+  IMAGE_REPO: ghcr.io/theopenlane/${APP_NAME}
+  SONAR_HOST: "https://sonarcloud.io"
+steps:
+  - group: ":test_tube: Tests"
+    key: "tests"
+    steps:
+      - label: ":golangci-lint: lint :lint-roller:"
+        key: "lint"
+        cancel_on_build_failing: true
+        plugins:
+          - docker#v5.11.0:
+              image: "ghcr.io/theopenlane/build-image:latest"
+              always-pull: true
+              command: ["task", "go:lint"]
+              environment:
+                - "GOTOOLCHAIN=auto"
+          - docker#v5.11.0:
+              image: "ghcr.io/theopenlane/build-image:latest"
+              always-pull: true
+              command: ["task", "go:test"]
+              environment:
+                - "GOTOOLCHAIN=auto"
