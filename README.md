@@ -41,18 +41,18 @@ import (
 func main() {
     sender, err := resend.New("your_resend_api_token")
     if err != nil {
-      log.Fatal(err)
+        log.Fatal(err)
     }
 
     msg := newman.NewEmailMessageWithOptions(
-      newman.WithFrom("no-reply@youremailaddress.com"),
-      newman.WithTo([]string{"mitb@emailsendingfun.com"}),
-      newman.WithSubject("Isn't sending emails with golang fun?"),
-      newman.WithHTML("<p>Oh Yes! Mark my words, Seinfeld! Your day of reckoning is coming</p>"),
-	  )
+        newman.WithFrom("no-reply@youremailaddress.com"),
+        newman.WithTo([]string{"mitb@emailsendingfun.com"}),
+        newman.WithSubject("Isn't sending emails with golang fun?"),
+        newman.WithHTML("<p>Oh Yes! Mark my words, Seinfeld! Your day of reckoning is coming</p>"),
+    )
 
     if err := sender.SendEmail(msg); err != nil {
-      log.Fatal(err)
+        log.Fatal(err)
     }
 }
 ```
