@@ -93,16 +93,23 @@ func (s *mockEmailSender) saveEmailToFile(message *newman.EmailMessage) error {
 		return err
 	}
 
-	path := generateUniqueFilename(dir, mimeMsg)
+	path, err := generateUniqueFilename(dir, mimeMsg)
+	if err != nil {
+		return err
+	}
 
 	return os.WriteFile(path, mimeMsg, readWriteMode)
 }
 
-func generateUniqueFilename(dir string, message []byte) string {
+func generateUniqueFilename(dir string, message []byte) (string, error) {
 	// Generate unique filename to avoid overwriting
 	ts := time.Now().Format(time.RFC3339)
 	h := fnv.New32()
-	h.Write(message)
 
-	return filepath.Join(dir, fmt.Sprintf("%s-%d.mim", ts, h.Sum32()))
+	_, err := h.Write(message)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(dir, fmt.Sprintf("%s-%d.mim", ts, h.Sum32())), nil
 }
