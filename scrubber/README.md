@@ -10,10 +10,11 @@ Example:
 
 ```go
 	import (
-	    "github.com/theopenlane/newman/scrubber"
-	    "github.com/theopenlane/newman"
 		"html"
 		"strings"
+
+		"github.com/theopenlane/newman/scrubber"
+		"github.com/theopenlane/newman"
 	)
 
 	func main() {

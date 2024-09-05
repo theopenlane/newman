@@ -33,12 +33,12 @@ type smtpEmailSender struct {
 }
 
 // New creates a new instance of smtpEmailSender
-func New(host string, port int, user, password string, authMethod string) (*smtpEmailSender, error) {
+func New(host string, port int, user, password string, authMethod string) (newman.EmailSender, error) {
 	return NewWithConnMethod(host, port, user, password, authMethod, defaultConnectionMethod)
 }
 
 // NewWithConnMethod creates a new instance of smtpEmailSender with the specified connection method
-func NewWithConnMethod(host string, port int, user, password string, authMethod string, connectionMethod string) (*smtpEmailSender, error) {
+func NewWithConnMethod(host string, port int, user, password string, authMethod string, connectionMethod string) (newman.EmailSender, error) {
 	return &smtpEmailSender{
 		host,
 		port,

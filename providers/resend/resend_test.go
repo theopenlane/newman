@@ -168,7 +168,7 @@ func TestSendEmailError(t *testing.T) {
 	assert.ErrorIs(t, err, ErrFailedToSendEmail)
 }
 
-func TestSendEmailValidatFail(t *testing.T) {
+func TestSendEmailValidateFail(t *testing.T) {
 	apiKey := "re_send_api_key" // #nosec G101
 
 	mc, ts := mockClient(t, apiKey, false)
