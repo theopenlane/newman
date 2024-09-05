@@ -10,12 +10,14 @@ import (
 	"github.com/resend/resend-go/v2"
 
 	"github.com/theopenlane/newman"
+	"github.com/theopenlane/newman/providers/mock"
 	"github.com/theopenlane/newman/shared"
 )
 
 // resendEmailSender represents a type that is responsible for sending email messages using the Resend service
 type resendEmailSender struct {
-	client *resend.Client
+	client  *resend.Client
+	testDir string
 }
 
 // Option is a type representing a function that modifies a ResendEmailSender
@@ -23,16 +25,24 @@ type Option func(*resendEmailSender)
 
 // New is a function that creates a new resend EmailSender instance.
 func New(apiKey string, options ...Option) (newman.EmailSender, error) {
-	if apiKey == "" {
-		return nil, ErrMissingAPIKey
-	}
-
+	// initialize the resendEmailSender
 	s := &resendEmailSender{
 		client: resend.NewClient(apiKey),
 	}
 
+	// apply the options
 	for _, option := range options {
 		option(s)
+	}
+
+	// if the testDir is set, we will use the mock provider
+	if s.testDir != "" {
+		return mock.New(s.testDir)
+	}
+
+	// ensure there is an API key when using the Resend client
+	if s.client.ApiKey == "" {
+		return nil, ErrMissingAPIKey
 	}
 
 	return s, nil
@@ -42,6 +52,12 @@ func New(apiKey string, options ...Option) (newman.EmailSender, error) {
 func WithClient(client *resend.Client) Option {
 	return func(s *resendEmailSender) {
 		s.client = client
+	}
+}
+
+func WithDevMode(path string) Option {
+	return func(s *resendEmailSender) {
+		s.testDir = path
 	}
 }
 

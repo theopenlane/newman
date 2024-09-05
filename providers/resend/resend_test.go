@@ -23,7 +23,7 @@ func testServerSuccess(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 
-		_, err := w.Write([]byte(`{"status": "sent"}`))
+		_, err := w.Write([]byte(`{"id": "sent"}`))
 		require.NoError(t, err)
 	}))
 }
@@ -32,7 +32,7 @@ func testServerError(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 
-		_, err := w.Write([]byte(`{"status": "notsent"}`))
+		_, err := w.Write([]byte(`{"id": ""}`))
 		require.NoError(t, err)
 	}))
 }
@@ -103,7 +103,7 @@ func TestNew(t *testing.T) {
 	// Test WithAPIKey option
 	newAPIKey := "new_api_key"
 
-	emailSender, err = New(apiKey, WithAPIKey(newAPIKey))
+	emailSender, err = New("", WithAPIKey(newAPIKey))
 	require.NoError(t, err)
 
 	resendSender, ok = emailSender.(*resendEmailSender)

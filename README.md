@@ -57,9 +57,24 @@ func main() {
 }
 ```
 
-This package supports various email providers and can be extended to include more
+### Development Mode
 
-### Implemented providers
+To switch to development an just log the email to a file instead of sending an email you can use the `mock` provider. With the `resend` provider, this is made easy with the `WithDevMode` option
+
+```go
+    sender, err := resend.New("", resend.WithDevMode("emails"))
+    if err != nil {
+      log.Fatal(err)
+    }
+```
+
+This will put the emails that would be send in the `emails/` directory instead.
+
+
+
+## Implemented Providers
+
+This package supports various email providers and can be extended to include more
 
   - Gmail
   - SendGrid
