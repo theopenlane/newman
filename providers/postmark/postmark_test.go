@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/theopenlane/newman"
 )
@@ -16,19 +17,27 @@ func TestEmailSenderImplementation(t *testing.T) {
 	var _ newman.EmailSender = (*postmarkEmailSender)(nil)
 }
 
-func TestNewPostmarkEmailSender(t *testing.T) {
+func TestNew(t *testing.T) {
 	serverToken := "test-server-token"
-	emailSender, err := NewPostmarkEmailSender(serverToken)
-	assert.NoError(t, err)
+
+	emailSender, err := New(serverToken)
+	require.NoError(t, err)
+
+	postmarkSender, ok := emailSender.(*postmarkEmailSender)
+	require.True(t, ok)
+
 	assert.NotNil(t, emailSender)
-	assert.Equal(t, serverToken, emailSender.serverToken)
-	assert.Equal(t, postMarkRequestMethod, emailSender.requestMethod)
-	assert.Equal(t, postMarkRequestURL, emailSender.url)
+	assert.Equal(t, serverToken, postmarkSender.serverToken)
+	assert.Equal(t, endpoint, postmarkSender.endpoint)
+	assert.Equal(t, requestURL, postmarkSender.url)
 }
 
-func TestPostmarkEmailSender_SendEmail(t *testing.T) {
-	emailSender, err := NewPostmarkEmailSender("test-server-token")
+func TestSendEmail(t *testing.T) {
+	emailSender, err := New("test-server-token")
 	assert.NoError(t, err)
+
+	postmarkSender, ok := emailSender.(*postmarkEmailSender)
+	require.True(t, ok)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps").
 		SetCC([]string{"cc@example.com"}).
@@ -49,14 +58,14 @@ func TestPostmarkEmailSender_SendEmail(t *testing.T) {
 
 	defer ts.Close()
 
-	emailSender.url = ts.URL
+	postmarkSender.url = ts.URL
 
 	err = emailSender.SendEmail(message)
 	assert.NoError(t, err)
 }
 
-func TestPostmarkEmailSender_SendEmailWithMarshalError(t *testing.T) {
-	emailSender, err := NewPostmarkEmailSender("test-server-token")
+func TestSendEmailWithMarshalError(t *testing.T) {
+	emailSender, err := New("test-server-token")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -70,43 +79,51 @@ func TestPostmarkEmailSender_SendEmailWithMarshalError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestPostmarkEmailSender_SendEmailWithRequestCreationError(t *testing.T) {
-	emailSender, err := NewPostmarkEmailSender("test-server-token")
+func TestSendEmailWithRequestCreationError(t *testing.T) {
+	emailSender, err := New("test-server-token")
 	assert.NoError(t, err)
+
+	postmarkSender, ok := emailSender.(*postmarkEmailSender)
+	require.True(t, ok)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
 
-	emailSender.url = "no a url"
-	emailSender.requestMethod = "no a request method"
+	postmarkSender.url = "not a url"
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
 }
 
-func TestPostmarkEmailSender_SendEmailWithSendError(t *testing.T) {
-	emailSender, err := NewPostmarkEmailSender("test-server-token")
+func TestSendEmailWithSendError(t *testing.T) {
+	emailSender, err := New("test-server-token")
 	assert.NoError(t, err)
+
+	postmarkSender, ok := emailSender.(*postmarkEmailSender)
+	require.True(t, ok)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(2 * clientTimeOut)
+		time.Sleep(2 * clientTimeout)
 
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}))
 
 	defer ts.Close()
 
-	emailSender.url = ts.URL
+	postmarkSender.url = ts.URL
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send email")
 }
 
-func TestPostmarkEmailSender_SendEmailWithNon200StatusCode(t *testing.T) {
-	emailSender, err := NewPostmarkEmailSender("test-server-token")
+func TestSendEmailWithNon200StatusCode(t *testing.T) {
+	emailSender, err := New("test-server-token")
 	assert.NoError(t, err)
+
+	postmarkSender, ok := emailSender.(*postmarkEmailSender)
+	require.True(t, ok)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
 
@@ -115,16 +132,19 @@ func TestPostmarkEmailSender_SendEmailWithNon200StatusCode(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	emailSender.url = ts.URL
+	postmarkSender.url = ts.URL
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send email")
 }
 
-func TestPostmarkEmailSender_SendEmailWithEmptyFields(t *testing.T) {
-	emailSender, err := NewPostmarkEmailSender("test-server-token")
+func TestSendEmailWithEmptyFields(t *testing.T) {
+	emailSender, err := New("test-server-token")
 	assert.NoError(t, err)
+
+	postmarkSender, ok := emailSender.(*postmarkEmailSender)
+	require.True(t, ok)
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -144,7 +164,7 @@ func TestPostmarkEmailSender_SendEmailWithEmptyFields(t *testing.T) {
 
 	defer ts.Close()
 
-	emailSender.url = ts.URL
+	postmarkSender.url = ts.URL
 
 	err = emailSender.SendEmail(message)
 	assert.NoError(t, err)

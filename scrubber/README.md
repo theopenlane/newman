@@ -1,6 +1,6 @@
 # Overview
 
-The scrubber package defines an interface for content sanitization (e.g. ensuring the content provided is user generated content only) and creates sane defaults for sanitizing plain text and HTML content. The goal is to allow customizable content sanitzation for newman's delivery.
+The scrubber package defines an interface for content sanitization (e.g. ensuring the content provided is user generated content only) and creates sane defaults for sanitizing plain text and HTML content. The goal is to allow customizable content sanitization for newman's delivery.
 
 # Usage
 
@@ -11,25 +11,25 @@ Example:
 ```go
 	import (
 	    "github.com/theopenlane/newman/scrubber"
-	    "github.com/theopenlane/newman/shared"
+	    "github.com/theopenlane/newman"
 		"html"
 		"strings"
 	)
 
 	func main() {
-	    email := shared.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Subject", "<p>HTML content</p>")
+		email := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Subject", "<p>HTML content</p>")
 
-	    customTextScrubber := scrubber.ScrubberFunc(func(content string) string {
-	        Implement your custom scrubber logic
-	        return strings.ToLower(strings.TrimSpace(content))
-	    })
+		customTextScrubber := scrubber.ScrubberFunc(func(content string) string {
+			//Implement your custom scrubber logic
+			return strings.ToLower(strings.TrimSpace(content))
+		})
 
-	    customHtmlScrubber := scrubber.ScrubberFunc(func(content string) string {
-	        Implement your custom scrubber logic
-	        return html.EscapeString(content)
-	    })
+		customHtmlScrubber := scrubber.ScrubberFunc(func(content string) string {
+			//Implement your custom scrubber logic
+			return html.EscapeString(content)
+		})
 
-	    email.SetCustomTextScrubber(customTextScrubber)
-	    email.SetCustomHtmlScrubber(customHtmlScrubber)
+		email.SetCustomTextScrubber(customTextScrubber)
+		email.SetCustomHTMLScrubber(customHtmlScrubber)
 	}
 ```

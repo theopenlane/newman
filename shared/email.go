@@ -168,7 +168,7 @@ func (e *EmailMessage) GetFrom() string {
 		return ""
 	}
 
-	return ValidateEmail(e.From)
+	return ValidateEmailAddress(e.From)
 }
 
 // GetTo returns a slice of trimmed and validated recipient email addresses
@@ -177,7 +177,7 @@ func (e *EmailMessage) GetTo() []string {
 		return []string{}
 	}
 
-	return ValidateEmailSlice(e.To)
+	return ValidateEmailAddresses(e.To)
 }
 
 // GetCC returns a slice of trimmed and validated CC recipient email addresses
@@ -186,7 +186,7 @@ func (e *EmailMessage) GetCC() []string {
 		return []string{}
 	}
 
-	return ValidateEmailSlice(e.Cc)
+	return ValidateEmailAddresses(e.Cc)
 }
 
 // GetBCC returns a slice of trimmed and validated BCC recipient email addresses
@@ -195,7 +195,7 @@ func (e *EmailMessage) GetBCC() []string {
 		return []string{}
 	}
 
-	return ValidateEmailSlice(e.Bcc)
+	return ValidateEmailAddresses(e.Bcc)
 }
 
 // GetReplyTo returns the trimmed and validated reply-to email address
@@ -204,7 +204,7 @@ func (e *EmailMessage) GetReplyTo() string {
 		return ""
 	}
 
-	return ValidateEmail(e.ReplyTo)
+	return ValidateEmailAddress(e.ReplyTo)
 }
 
 // GetSubject returns the scrubd email subject

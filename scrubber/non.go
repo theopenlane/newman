@@ -1,6 +1,6 @@
 package scrubber
 
-// nonScrubber is an implementation of the Scrubber interface that performs no sanitizatio
+// nonScrubber is an implementation of the Scrubber interface that performs no sanitization
 type nonScrubber struct{}
 
 // Scrub returns the input text without any modifications

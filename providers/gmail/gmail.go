@@ -15,14 +15,39 @@ import (
 	"github.com/theopenlane/newman/credentials"
 )
 
-// gmailMessageSenderWrapper wraps the Gmail UsersMessagesService
-type gmailMessageSenderWrapper struct {
+// gmailEmailSender wraps the Gmail UsersMessagesService
+type gmailEmailSender struct {
 	messageSender *gmail.UsersMessagesService
 	user          string
 }
 
-// send sends a Gmail message
-func (s *gmailMessageSenderWrapper) send(message *gmail.Message) (*gmail.Message, error) {
+// SendEmail satisfies the EmailSender interface
+func (s *gmailEmailSender) SendEmail(message *newman.EmailMessage) error {
+	return s.SendEmailWithContext(context.Background(), message)
+}
+
+// SendEmailWithContext satisfies the EmailSender interface
+func (s *gmailEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
+	mimeMessage, err := newman.BuildMimeMessage(message)
+	if err != nil {
+		return ErrUnableToBuildMIMEMessage
+	}
+
+	mimeMessage = addBCCRecipients(mimeMessage, message.GetBCC())
+
+	gMessage := &gmail.Message{
+		Raw: base64.URLEncoding.EncodeToString(mimeMessage),
+	}
+
+	if _, err = s.send(gMessage); err != nil {
+		return ErrFailedToSendEmail
+	}
+
+	return nil
+}
+
+// send a Gmail message
+func (s *gmailEmailSender) send(message *gmail.Message) (*gmail.Message, error) {
 	if s.messageSender == nil {
 		return nil, ErrNoUsersMessagesService
 	}
@@ -35,41 +60,28 @@ func (s *gmailMessageSenderWrapper) send(message *gmail.Message) (*gmail.Message
 	return s.messageSender.Send(user, message).Do()
 }
 
-// SendEmail sends an email using the Gmail API
-func (s *gmailMessageSenderWrapper) SendEmail(message *newman.EmailMessage) error {
-	mimeMessage, err := newman.BuildMimeMessage(message)
-	if err != nil {
-		return ErrUnableToBuildMIMEMessage
+// addBCCRecipients adds BCC recipients to the message
+func addBCCRecipients(message []byte, bccs []string) []byte {
+	if len(bccs) == 0 {
+		return message
 	}
 
-	bccs := message.GetBCC()
-	if len(bccs) > 0 {
-		var msg bytes.Buffer
+	var msg bytes.Buffer
 
-		msg.WriteString(fmt.Sprintf("Bcc: %s\r\n", strings.Join(bccs, ",")))
+	msg.WriteString(fmt.Sprintf("Bcc: %s\r\n", strings.Join(bccs, ",")))
 
-		mimeMessage = append(msg.Bytes(), mimeMessage...)
-	}
+	message = append(msg.Bytes(), message...)
 
-	gMessage := &gmail.Message{
-		Raw: base64.URLEncoding.EncodeToString(mimeMessage),
-	}
-
-	_, err = s.send(gMessage)
-	if err != nil {
-		return ErrFailedToSendEmail
-	}
-
-	return nil
+	return message
 }
 
-// GmailTokenManager defines an interface for obtaining OAuth2 tokens
-type GmailTokenManager interface {
+// TokenManager defines an interface for obtaining OAuth2 tokens
+type TokenManager interface {
 	GetToken() ([]byte, error)
 }
 
-// NewGmailEmailSenderOauth2 initializes a new gmailEmailSenderOauth2 instance using OAuth2 credentials
-func NewGmailEmailSenderOauth2(ctx context.Context, configJSON []byte, tokenManager GmailTokenManager, user string) (*gmailMessageSenderWrapper, error) {
+// NewWithOauth2 initializes a new gmailEmailSenderOauth2 instance using OAuth2 credentials
+func NewWithOauth2(ctx context.Context, configJSON []byte, tokenManager TokenManager, user string) (newman.EmailSender, error) {
 	config, err := credentials.ParseCredentials(configJSON)
 	if err != nil {
 		return nil, err
@@ -92,11 +104,11 @@ func NewGmailEmailSenderOauth2(ctx context.Context, configJSON []byte, tokenMana
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailMessageSenderWrapper{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
 }
 
-// NewGmailEmailSenderServiceAccount initializes a new gmailEmailSenderServiceAccount instance using service account JSON credentials
-func NewGmailEmailSenderServiceAccount(ctx context.Context, jsonCredentials []byte, user string) (*gmailMessageSenderWrapper, error) {
+// NewWithServiceAccount initializes a new gmailEmailSenderServiceAccount instance using service account JSON credentials
+func NewWithServiceAccount(ctx context.Context, jsonCredentials []byte, user string) (newman.EmailSender, error) {
 	params := google.CredentialsParams{
 		Scopes:  []string{gmail.GmailSendScope},
 		Subject: user,
@@ -112,21 +124,21 @@ func NewGmailEmailSenderServiceAccount(ctx context.Context, jsonCredentials []by
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailMessageSenderWrapper{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
 }
 
-// NewGmailEmailSenderAPIKey initializes a new gmailEmailSenderAPIKey instance using an API key
-func NewGmailEmailSenderAPIKey(ctx context.Context, apiKey, user string) (*gmailMessageSenderWrapper, error) {
+// NewWithAPIKey initializes a new gmailEmailSenderAPIKey instance using an API key
+func NewWithAPIKey(ctx context.Context, apiKey, user string) (newman.EmailSender, error) {
 	srv, err := gmail.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailMessageSenderWrapper{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
 }
 
-// NewGmailEmailSenderJWT initializes a new gmailEmailSenderJWT instance using JWT configuration
-func NewGmailEmailSenderJWT(ctx context.Context, configJSON []byte, user string) (*gmailMessageSenderWrapper, error) {
+// NewWithJWTConfig initializes a new gmailEmailSenderJWT instance using JWT configuration
+func NewWithJWTConfig(ctx context.Context, configJSON []byte, user string) (newman.EmailSender, error) {
 	config, err := google.JWTConfigFromJSON(configJSON)
 	if err != nil {
 		return nil, ErrUnableToParseJWTCredentials
@@ -139,11 +151,11 @@ func NewGmailEmailSenderJWT(ctx context.Context, configJSON []byte, user string)
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailMessageSenderWrapper{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
 }
 
-// NewGmailEmailSenderJWTAccess initializes a new gmailEmailSenderJWTAccess instance using a JWT access token
-func NewGmailEmailSenderJWTAccess(ctx context.Context, jsonCredentials []byte, user string) (*gmailMessageSenderWrapper, error) {
+// NewWithJWTAccess initializes a new gmailEmailSenderJWTAccess instance using a JWT access token
+func NewWithJWTAccess(ctx context.Context, jsonCredentials []byte, user string) (newman.EmailSender, error) {
 	tokenSource, err := google.JWTAccessTokenSourceFromJSON(jsonCredentials, gmail.GmailSendScope)
 	if err != nil {
 		return nil, ErrUnableToParseJWTCredentials
@@ -154,5 +166,5 @@ func NewGmailEmailSenderJWTAccess(ctx context.Context, jsonCredentials []byte, u
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailMessageSenderWrapper{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
 }

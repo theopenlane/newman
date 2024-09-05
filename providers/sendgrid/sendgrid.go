@@ -1,6 +1,9 @@
 package sendgrid
 
 import (
+	"context"
+	"net/http"
+
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
@@ -12,15 +15,20 @@ type sendGridEmailSender struct {
 	client *sendgrid.Client
 }
 
-// NewSendGridEmailSender creates a new instance of sendGridEmailSender
-func NewSendGridEmailSender(apiKey string) (*sendGridEmailSender, error) {
+// New creates a new instance of sendGridEmailSender
+func New(apiKey string) (newman.EmailSender, error) {
 	return &sendGridEmailSender{
 		client: sendgrid.NewSendClient(apiKey),
 	}, nil
 }
 
-// SendEmail sends an email using the SendGrid API
+// SendEmail satisfies the EmailSender interface
 func (s *sendGridEmailSender) SendEmail(message *newman.EmailMessage) error {
+	return s.SendEmailWithContext(context.Background(), message)
+}
+
+// SendEmailWithContext satisfies the EmailSender interface
+func (s *sendGridEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
 	from := mail.NewEmail("", message.GetFrom())
 	toRecipients := []*mail.Email{}
 
@@ -71,12 +79,12 @@ func (s *sendGridEmailSender) SendEmail(message *newman.EmailMessage) error {
 		v3Mail.AddAttachment(a)
 	}
 
-	response, err := s.client.Send(v3Mail)
+	response, err := s.client.SendWithContext(ctx, v3Mail)
 	if err != nil {
 		return ErrFailedToSendEmail
 	}
 
-	if response.StatusCode >= 400 { // nolint: mnd
+	if response.StatusCode >= http.StatusBadRequest {
 		return ErrFailedToSendEmail
 	}
 

@@ -1,18 +1,7 @@
-package shared
+package newman
 
-// Option is a type representing a function that modifies a ResendClient
+// MessageOption is a function that sets a field on an EmailMessage
 type MessageOption func(*EmailMessage)
-
-// NewResendClient is a function that creates a new ResendClient instance.
-func NewEmailMessageWithOptions(options ...MessageOption) *EmailMessage {
-	s := EmailMessage{}
-
-	for _, option := range options {
-		option(&s)
-	}
-
-	return &s
-}
 
 // WithFrom sets the from email address
 func WithFrom(from string) MessageOption {

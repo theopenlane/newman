@@ -16,6 +16,12 @@ tasks:
     aliases: [cover]
     cmds:
       - go test -v ./... -coverprofile=coverage.out
+
+  go:test:coverout:
+    desc: runs and outputs results of created go tests with coverage
+    aliases: [cover]
+    cmds:
+      - task: go:test:cover
       - go tool cover -html=coverage.out
 
   go:fmt:
@@ -29,11 +35,6 @@ tasks:
     cmds:
       - go mod tidy
 
-  go:build:
-    desc: Runs go build for the newman server
-    cmds:
-      - go build -mod=mod -o newman
-
   go:all:
     aliases: [go]
     desc: Runs all go test and lint related tasks
@@ -41,7 +42,7 @@ tasks:
       - task: go:tidy
       - task: go:fmt
       - task: go:lint
-      - task: go:test:cover
+      - task: go:test:coverout
 
   precommit-full:
     desc: Lint the project against all files

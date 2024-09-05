@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
@@ -22,9 +23,9 @@ type MockTokenManager struct {
 	err   error
 }
 
-// TestEmailSenderImplementation checks if gmailMessageSenderWrapper implements the EmailSender interface
+// TestEmailSenderImplementation checks if gmailEmailSender implements the EmailSender interface
 func TestEmailSenderImplementation(t *testing.T) {
-	var _ newman.EmailSender = (*gmailMessageSenderWrapper)(nil)
+	var _ newman.EmailSender = (*gmailEmailSender)(nil)
 }
 
 func (m *MockTokenManager) GetToken() ([]byte, error) {
@@ -74,14 +75,14 @@ func (m *MockGmailService) Send(userID string, message *gmail.Message) *gmail.Us
 }
 
 // buildMockGmailMessageSenderWrapper builds a mock gmailMessageSenderWrapper for testing
-func buildMockGmailMessageSenderWrapper(err error) *gmailMessageSenderWrapper {
+func buildMockGmailMessageSenderWrapper(err error) *gmailEmailSender {
 	mockGmailService, _ := gmail.NewService(context.Background(), option.WithHTTPClient(&http.Client{
 		Transport: &GmailMockRoundTripper{
 			Err: err,
 		},
 	}))
 
-	return &gmailMessageSenderWrapper{
+	return &gmailEmailSender{
 		messageSender: mockGmailService.Users.Messages,
 		user:          "me",
 	}
@@ -157,10 +158,14 @@ func TestNewGmailEmailSenderOauth2(t *testing.T) {
 	tokenManager := &mockGmailTokenManager{}
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderOauth2(context.Background(), configJSON, tokenManager, user)
+	emailSender, err := NewWithOauth2(context.Background(), configJSON, tokenManager, user)
 	assert.NoError(t, err)
-	assert.Equal(t, user, emailSender.user)
-	assert.NotNil(t, emailSender.messageSender)
+
+	gmailSender, ok := emailSender.(*gmailEmailSender)
+	require.True(t, ok)
+
+	assert.Equal(t, user, gmailSender.user)
+	assert.NotNil(t, gmailSender.messageSender)
 }
 
 func TestGmailEmailSenderOauth2GetGmailMessageSender(t *testing.T) {
@@ -179,7 +184,7 @@ func TestGmailEmailSenderOauth2GetGmailMessageSender(t *testing.T) {
 	tokenManager := &mockGmailTokenManager{}
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderOauth2(context.Background(), configJSON, tokenManager, user)
+	emailSender, err := NewWithOauth2(context.Background(), configJSON, tokenManager, user)
 	assert.NoError(t, err)
 	assert.NotNil(t, emailSender)
 }
@@ -200,7 +205,7 @@ func TestNewGmailEmailSenderOauth2InvalidToken(t *testing.T) {
 	tokenManager := &mockInvalidTokenManager{}
 	user := "me"
 
-	_, err := NewGmailEmailSenderOauth2(context.Background(), configJSON, tokenManager, user)
+	_, err := NewWithOauth2(context.Background(), configJSON, tokenManager, user)
 	assert.Error(t, err)
 }
 
@@ -219,10 +224,14 @@ func TestNewGmailEmailSenderServiceAccount(t *testing.T) {
 	}`)
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderServiceAccount(context.Background(), jsonCredentials, user)
+	emailSender, err := NewWithServiceAccount(context.Background(), jsonCredentials, user)
 	assert.NoError(t, err)
-	assert.Equal(t, user, emailSender.user)
-	assert.NotNil(t, emailSender.messageSender)
+
+	gmailSender, ok := emailSender.(*gmailEmailSender)
+	require.True(t, ok)
+
+	assert.Equal(t, user, gmailSender.user)
+	assert.NotNil(t, gmailSender.messageSender)
 }
 
 func TestGmailEmailSenderServiceAccountGetGmailMessageSender(t *testing.T) {
@@ -240,7 +249,7 @@ func TestGmailEmailSenderServiceAccountGetGmailMessageSender(t *testing.T) {
 	}`)
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderServiceAccount(context.Background(), jsonCredentials, user)
+	emailSender, err := NewWithServiceAccount(context.Background(), jsonCredentials, user)
 	assert.NoError(t, err)
 	assert.NotNil(t, emailSender)
 }
@@ -249,17 +258,21 @@ func TestNewGmailEmailSenderAPIKey(t *testing.T) {
 	apiKey := "mock_api_key" // nolint: gosec
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderAPIKey(context.Background(), apiKey, user)
+	emailSender, err := NewWithAPIKey(context.Background(), apiKey, user)
 	assert.NoError(t, err)
-	assert.Equal(t, user, emailSender.user)
-	assert.NotNil(t, emailSender.messageSender)
+
+	gmailSender, ok := emailSender.(*gmailEmailSender)
+	require.True(t, ok)
+
+	assert.Equal(t, user, gmailSender.user)
+	assert.NotNil(t, gmailSender.messageSender)
 }
 
 func TestGmailEmailSenderAPIKeyGetGmailMessageSender(t *testing.T) {
 	apiKey := "mock_api_key" // nolint: gosec
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderAPIKey(context.Background(), apiKey, user)
+	emailSender, err := NewWithAPIKey(context.Background(), apiKey, user)
 	assert.NoError(t, err)
 	assert.NotNil(t, emailSender)
 }
@@ -279,10 +292,14 @@ func TestNewGmailEmailSenderJWT(t *testing.T) {
 	}`)
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderJWT(context.Background(), configJSON, user)
+	emailSender, err := NewWithJWTConfig(context.Background(), configJSON, user)
 	assert.NoError(t, err)
-	assert.Equal(t, user, emailSender.user)
-	assert.NotNil(t, emailSender.messageSender)
+
+	gmailSender, ok := emailSender.(*gmailEmailSender)
+	require.True(t, ok)
+
+	assert.Equal(t, user, gmailSender.user)
+	assert.NotNil(t, gmailSender.messageSender)
 }
 
 func TestGmailEmailSenderJWTGetGmailMessageSender(t *testing.T) {
@@ -300,7 +317,7 @@ func TestGmailEmailSenderJWTGetGmailMessageSender(t *testing.T) {
 	}`)
 	user := "me"
 
-	emailSender, err := NewGmailEmailSenderJWT(context.Background(), configJSON, user)
+	emailSender, err := NewWithJWTConfig(context.Background(), configJSON, user)
 	assert.NoError(t, err)
 	assert.NotNil(t, emailSender)
 }
@@ -309,7 +326,7 @@ func TestNewGmailEmailSenderJWTInvalidJson(t *testing.T) {
 	configJSON := []byte(`{invalid_json}`)
 	user := "me"
 
-	_, err := NewGmailEmailSenderJWT(context.Background(), configJSON, user)
+	_, err := NewWithJWTConfig(context.Background(), configJSON, user)
 	assert.Error(t, err)
 }
 
@@ -317,12 +334,12 @@ func TestNewGmailEmailSenderJWTAccessInvalidJson(t *testing.T) {
 	jsonCredentials := []byte(`{invalid_json}`)
 	user := "me"
 
-	_, err := NewGmailEmailSenderJWTAccess(context.Background(), jsonCredentials, user)
+	_, err := NewWithJWTAccess(context.Background(), jsonCredentials, user)
 	assert.Error(t, err)
 }
 
 func TestSendEmailWithNilGmailService(t *testing.T) {
-	emailSender := &gmailMessageSenderWrapper{}
+	emailSender := &gmailEmailSender{}
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
 
@@ -335,6 +352,6 @@ func TestNewGmailEmailSenderServiceAccountInvalidJson(t *testing.T) {
 	jsonCredentials := []byte(`{invalid_json}`)
 	user := "me"
 
-	_, err := NewGmailEmailSenderServiceAccount(context.Background(), jsonCredentials, user)
+	_, err := NewWithServiceAccount(context.Background(), jsonCredentials, user)
 	assert.Error(t, err)
 }

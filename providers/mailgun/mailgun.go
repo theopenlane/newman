@@ -9,38 +9,48 @@ import (
 	"github.com/theopenlane/newman"
 )
 
-type MailgunEmailSender struct {
+type mailgunEmailSender struct {
 	client mailgun.Mailgun
 }
 
-type MGOption func(*MailgunEmailSender)
+// Option is a type representing a function that modifies a mailgunEmailSender
+type Option func(*mailgunEmailSender)
 
 // WithEurope sets the API Mailgun base url to Europe region.
-func WithEurope() MGOption {
-	return func(m *MailgunEmailSender) {
+func WithEurope() Option {
+	return func(m *mailgunEmailSender) {
 		m.client.SetAPIBase(mailgun.APIBaseEU)
 	}
 }
 
-func NewMailgunEmailSender(domain, apikey string, opts ...MGOption) *MailgunEmailSender {
-	mg := &MailgunEmailSender{
-		client: mailgun.NewMailgun(domain, apikey),
+func New(domain, apiKey string, opts ...Option) (newman.EmailSender, error) {
+	if apiKey == "" {
+		return nil, ErrMissingAPIKey
+	}
+
+	mg := &mailgunEmailSender{
+		client: mailgun.NewMailgun(domain, apiKey),
 	}
 
 	for _, opt := range opts {
 		opt(mg)
 	}
 
-	return mg
+	return mg, nil
 }
 
-// SendEmail sends an email using the Mailgun API
-func (s *MailgunEmailSender) SendEmail(ctx context.Context, message *newman.EmailMessage) error {
+// SendEmail satisfies the EmailSender interface
+func (s *mailgunEmailSender) SendEmail(message *newman.EmailMessage) error {
+	return s.SendEmailWithContext(context.Background(), message)
+}
+
+// SendEmailWithContext satisfies the EmailSender interface
+func (s *mailgunEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
 	mailMessage := s.client.NewMessage(message.From, message.Subject, message.Text, message.To...)
 
-	_, _, err := s.client.Send(ctx, mailMessage)
-	if err != nil {
+	if _, _, err := s.client.Send(ctx, mailMessage); err != nil {
 		return fmt.Errorf("send message: %w", err)
 	}
+
 	return nil
 }

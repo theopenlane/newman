@@ -74,28 +74,38 @@ func ExampleStrPtr() {
 	name := "Jerry Seinfeld"
 	namePtr := shared.StrPtr(name)
 	fmt.Println(*namePtr)
+
+	// Output: Jerry Seinfeld
 }
 
 func ExampleGetMimeType() {
 	filename := "document.pdf"
 	mimeType := shared.GetMimeType(filename)
 	fmt.Println(mimeType)
+
+	// Output: application/pdf
 }
 
 func ExampleIsHTML_true() {
 	html := "<html><body>HTML body</body></html>"
 	result := shared.IsHTML(html)
 	fmt.Println(result)
+
+	// Output: true
 }
 
 func ExampleIsHTML_false() {
 	plainText := "Just a plain text"
 	result := shared.IsHTML(plainText)
 	fmt.Println(result)
+
+	// Output: false
 }
 
 func ExampleIsHTML_partiallyContainsHTML() {
 	combined := "Plain text with <html> tag"
 	result := shared.IsHTML(combined)
 	fmt.Println(result)
+
+	// Output: true
 }

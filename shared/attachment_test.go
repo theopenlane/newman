@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAttachmentGetters(t *testing.T) {
@@ -173,16 +174,13 @@ openlane, your trusted partner for cat typing`,
 
 		for _, testFile := range testFiles {
 			attachment, err := NewAttachmentFromFile(testFile.filePath)
-			if err != nil {
-				t.Fatalf("NewAttachmentFromFile() error = %v, want nil", err)
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, attachment.Filename, testFile.expectedName)
 
 			content, err := os.ReadFile(testFile.filePath)
-			if err != nil {
-				t.Fatalf("Failed to read test file: %v", err)
-			}
+			require.NoErrorf(t, err, "failed to read test file")
+
 			assert.Equal(t, string(attachment.Content), string(content))
 		}
 	})
@@ -197,6 +195,7 @@ openlane, your trusted partner for cat typing`,
 
 func TestSetFilename(t *testing.T) {
 	attachment := &Attachment{}
+
 	t.Run("SetFilename", func(t *testing.T) {
 		expected := "newfile.txt"
 		attachment.SetFilename(expected)
@@ -206,6 +205,7 @@ func TestSetFilename(t *testing.T) {
 
 func TestSetContent(t *testing.T) {
 	attachment := &Attachment{}
+
 	t.Run("SetContent", func(t *testing.T) {
 		expected := []byte("new content")
 		attachment.SetContent(expected)
@@ -215,17 +215,22 @@ func TestSetContent(t *testing.T) {
 
 func TestSanitizeFilename(t *testing.T) {
 	attachment := &Attachment{}
+
 	t.Run("sanitize Filename with HTML", func(t *testing.T) {
 		fileName := "<div>Test</div>"
 		expected := "&lt;div&gt;Test&lt;/div&gt;"
+
 		attachment.SetFilename(fileName)
+
 		assert.Equal(t, expected, attachment.GetFilename())
 	})
 
 	t.Run("sanitize Filename with spaces", func(t *testing.T) {
 		fileName := "  Test  "
 		expected := "Test"
+
 		attachment.SetFilename(fileName)
+
 		assert.Equal(t, expected, attachment.GetFilename())
 	})
 }

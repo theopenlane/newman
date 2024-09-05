@@ -54,7 +54,7 @@ func NewMockSendGridEmailSender(apiKey, url string) *sendGridEmailSender {
 
 func TestNewSendGridEmailSender(t *testing.T) {
 	apiKey := "test-api-key"
-	emailSender, err := NewSendGridEmailSender(apiKey)
+	emailSender, err := New(apiKey)
 	assert.NoError(t, err)
 	assert.NotNil(t, emailSender)
 }

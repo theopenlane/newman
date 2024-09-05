@@ -1,12 +1,19 @@
 package smtp
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/smtp"
 	"os"
 
 	"github.com/theopenlane/newman"
+)
+
+const (
+	defaultConnectionMethod = "IMPLICIT"
+	TLSConnection           = "TLS"
+	CRAMMD5Auth             = "CRAM-MD5"
 )
 
 // smtpEmailSender is responsible for sending emails using SMTP
@@ -21,17 +28,17 @@ type smtpEmailSender struct {
 	password string
 	// The authentication method to use
 	authMethod string
-	// The connection method to use (by default implicit
+	// The connection method to use (by default implicit)
 	connectionMethod string
 }
 
-// NewSMTPEmailSender creates a new instance of smtpEmailSender
-func NewSMTPEmailSender(host string, port int, user, password string, authMethod string) (*smtpEmailSender, error) {
-	return NewSMTPEmailSenderWithConnMethod(host, port, user, password, authMethod, "IMPLICIT")
+// New creates a new instance of smtpEmailSender
+func New(host string, port int, user, password string, authMethod string) (*smtpEmailSender, error) {
+	return NewWithConnMethod(host, port, user, password, authMethod, defaultConnectionMethod)
 }
 
-// NewSMTPEmailSenderWithConnMethod creates a new instance of smtpEmailSender
-func NewSMTPEmailSenderWithConnMethod(host string, port int, user, password string, authMethod string, connectionMethod string) (*smtpEmailSender, error) {
+// NewWithConnMethod creates a new instance of smtpEmailSender with the specified connection method
+func NewWithConnMethod(host string, port int, user, password string, authMethod string, connectionMethod string) (*smtpEmailSender, error) {
 	return &smtpEmailSender{
 		host,
 		port,
@@ -42,8 +49,13 @@ func NewSMTPEmailSenderWithConnMethod(host string, port int, user, password stri
 	}, nil
 }
 
-// SendEmail sends an email using the specified SMTP settings and authentication method
+// SendEmail satisfies the EmailSender interface
 func (s *smtpEmailSender) SendEmail(message *newman.EmailMessage) error {
+	return s.SendEmailWithContext(context.Background(), message)
+}
+
+// SendEmailWithContext satisfies the EmailSender interface
+func (s *smtpEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
 	sendMailTo := message.GetTo()
 	sendMailTo = append(sendMailTo, message.GetCC()...)
 	sendMailTo = append(sendMailTo, message.GetBCC()...)
@@ -54,64 +66,69 @@ func (s *smtpEmailSender) SendEmail(message *newman.EmailMessage) error {
 	}
 
 	auth := smtp.PlainAuth("", s.user, s.password, s.host)
-	if s.authMethod == "CRAM-MD5" {
+	if s.authMethod == CRAMMD5Auth {
 		auth = smtp.CRAMMD5Auth(s.user, s.password)
 	}
 
-	if s.connectionMethod == "TLS" {
-		skipInsecure := false
-		if os.Getenv("APP_ENV") == "development" {
-			skipInsecure = true
-		}
-
-		tlsconfig := &tls.Config{
-			InsecureSkipVerify: skipInsecure, // nolint: gosec
-			ServerName:         s.host,
-		}
-
-		conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.host, s.port), tlsconfig)
-		if err != nil {
-			return err
-		}
-
-		client, err := smtp.NewClient(conn, s.host)
-		if err != nil {
-			return err
-		}
-
-		if err = client.Auth(auth); err != nil {
-			return err
-		}
-
-		if err = client.Mail(message.GetFrom()); err != nil {
-			return err
-		}
-
-		for _, addr := range sendMailTo {
-			if err = client.Rcpt(addr); err != nil {
-				return err
-			}
-		}
-
-		w, err := client.Data()
-		if err != nil {
-			return err
-		}
-
-		_, err = w.Write(msg)
-		if err != nil {
-			return err
-		}
-
-		err = w.Close()
-		if err != nil {
-			return err
-		}
-
-		return client.Quit()
-	} else {
-		err = smtp.SendMail(fmt.Sprintf("%s:%d", s.host, s.port), auth, message.GetFrom(), sendMailTo, msg)
+	if s.connectionMethod == TLSConnection {
+		return s.secureSend(auth, message.GetFrom(), sendMailTo, msg)
 	}
 
-	return err
+	return s.send(auth, message.GetFrom(), sendMailTo, msg)
+}
+
+func (s *smtpEmailSender) send(auth smtp.Auth, from string, to []string, message []byte) error {
+	return smtp.SendMail(fmt.Sprintf("%s:%d", s.host, s.port), auth, from, to, message)
+}
+
+func (s *smtpEmailSender) secureSend(auth smtp.Auth, from string, to []string, message []byte) error {
+	// TODO: this should be updated to not use environment variables
+	skipInsecure := false
+	if os.Getenv("APP_ENV") == "development" {
+		skipInsecure = true
+	}
+
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: skipInsecure, // nolint: gosec
+		ServerName:         s.host,
+	}
+
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.host, s.port), tlsConfig)
+	if err != nil {
+		return err
+	}
+
+	client, err := smtp.NewClient(conn, s.host)
+	if err != nil {
+		return err
+	}
+
+	if err = client.Auth(auth); err != nil {
+		return err
+	}
+
+	if err = client.Mail(from); err != nil {
+		return err
+	}
+
+	for _, addr := range to {
+		if err = client.Rcpt(addr); err != nil {
+			return err
+		}
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+
+	if _, err = w.Write(message); err != nil {
+		return err
+	}
+
+	if err = w.Close(); err != nil {
+		return err
+	}
+
+	return client.Quit()
 }
