@@ -10,7 +10,47 @@ import (
 	"github.com/theopenlane/newman/shared"
 )
 
-func TestValidateEmail(t *testing.T) {
+func TestValidateValidateEmailMessage(t *testing.T) {
+	tests := []struct {
+		name string
+		msg  *shared.EmailMessage
+		err  error
+	}{
+		{
+			name: "valid email message",
+			msg: &shared.EmailMessage{
+				From: "mitb@example.com",
+				To:   []string{"funky@funk.com", "waters@kitb.com"},
+			},
+			err: nil,
+		},
+		{
+			name: "missing from",
+			msg: &shared.EmailMessage{
+				To: []string{"funky@funk.com"},
+			},
+			err: &shared.MissingRequiredFieldError{
+				RequiredField: "from",
+			},
+		},
+		{
+			name: "missing to",
+			msg: &shared.EmailMessage{
+				From: "mitb@example.com",
+			},
+			err: &shared.MissingRequiredFieldError{
+				RequiredField: "to",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resultErr := shared.ValidateEmailMessage(test.msg)
+			assert.Equal(t, test.err, resultErr)
+		})
+	}
+}
+func TestValidateEmailAddress(t *testing.T) {
 	tests := []struct {
 		email    string
 		expected string
@@ -36,13 +76,13 @@ func TestValidateEmail(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.email, func(t *testing.T) {
-			result := shared.ValidateEmail(test.email)
+			result := shared.ValidateEmailAddress(test.email)
 			assert.Equal(t, test.expected, result)
 		})
 	}
 }
 
-func TestValidateEmailSlice(t *testing.T) {
+func TestValidateEmailAddresses(t *testing.T) {
 	tests := []struct {
 		emails   []string
 		expected []string
@@ -56,37 +96,37 @@ func TestValidateEmailSlice(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(strings.Join(test.emails, ","), func(t *testing.T) {
-			result := shared.ValidateEmailSlice(test.emails)
+			result := shared.ValidateEmailAddresses(test.emails)
 			assert.Equal(t, test.expected, result)
 		})
 	}
 }
 
-func ExampleValidateEmail() {
+func ExampleValidateEmailAddress() {
 	email := "newman@usps.com"
-	result := shared.ValidateEmail(email)
+	result := shared.ValidateEmailAddress(email)
 	fmt.Println(result)
 }
 
-func ExampleValidateEmail_not() {
+func ExampleValidateEmailAddress_not() {
 	email := "test@com"
-	result := shared.ValidateEmail(email)
+	result := shared.ValidateEmailAddress(email)
 	fmt.Println(result)
 }
 
-func ExampleValidateEmail_trim() {
+func ExampleValidateEmailAddress_trim() {
 	email := "  newman@usps.com  "
-	result := shared.ValidateEmail(email)
+	result := shared.ValidateEmailAddress(email)
 	fmt.Println(result)
 }
 
-func ExampleValidateEmailSlice() {
+func ExampleValidateEmailAddresses() {
 	emails := []string{"newman@usps.com", "test@domain_name.com"}
-	result := shared.ValidateEmailSlice(emails)
+	result := shared.ValidateEmailAddresses(emails)
 	fmt.Println(result)
 }
-func ExampleValidateEmailSlice_partial() {
+func ExampleValidateEmailAddresses_partial() {
 	emails := []string{"newman@usps.com", "test@com"}
-	result := shared.ValidateEmailSlice(emails)
+	result := shared.ValidateEmailAddresses(emails)
 	fmt.Println(result)
 }

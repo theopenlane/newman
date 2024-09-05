@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/theopenlane/newman"
 )
@@ -23,9 +24,7 @@ func TestEmailSenderImplementation(t *testing.T) {
 // newMockSMTPServer creates a mock SMTP server for testing purposes
 func newMockSMTPServer(t *testing.T, handler func(conn net.Conn)) *mockSMTPServer {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("failed to start mock SMTP server: %v", err)
-	}
+	require.NoErrorf(t, err, "failed to start mock SMTP server")
 
 	server := &mockSMTPServer{
 		listener: listener,
@@ -156,7 +155,7 @@ func decodeConnectionCommand(cmd, message string) []string {
 	return strings.Split(trimmedDecoded, "\x00")
 }
 func TestNewSMTPEmailSender(t *testing.T) {
-	emailSender, err := NewSMTPEmailSender("smtp.example.com", 587, "user", "We gotta find that rickshaw", "PLAIN")
+	emailSender, err := New("smtp.example.com", 587, "user", "We gotta find that rickshaw", "PLAIN")
 	assert.NoError(t, err)
 	assert.NotNil(t, emailSender)
 }
@@ -173,7 +172,7 @@ func TestSendEmailPlainAuth(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN")
+	emailSender, err := New(host, portInt, "user", "We gotta find that rickshaw", "PLAIN")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -194,7 +193,7 @@ func TestSendEmailCramMD5Auth(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSender(host, portInt, "user", "We gotta find that rickshaw", "CRAM-MD5")
+	emailSender, err := New(host, portInt, "user", "We gotta find that rickshaw", "CRAM-MD5")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -215,7 +214,7 @@ func TestSendEmailError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSender(host, portInt, "user", "wrongWe gotta find that rickshaw", "PLAIN")
+	emailSender, err := New(host, portInt, "user", "wrongWe gotta find that rickshaw", "PLAIN")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -226,7 +225,7 @@ func TestSendEmailError(t *testing.T) {
 
 // //////
 func TestSendEmailInvalidServer(t *testing.T) {
-	emailSender, err := NewSMTPEmailSender("invalid.server.com", 587, "user", "We gotta find that rickshaw", "PLAIN")
+	emailSender, err := New("invalid.server.com", 587, "user", "We gotta find that rickshaw", "PLAIN")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -236,7 +235,7 @@ func TestSendEmailInvalidServer(t *testing.T) {
 }
 
 func TestSendEmailMissingSettings(t *testing.T) {
-	emailSender, err := NewSMTPEmailSender("", 0, "", "", "PLAIN")
+	emailSender, err := New("", 0, "", "", "PLAIN")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -257,7 +256,7 @@ func TestSendEmailImplicitTLS(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "IMPLICIT")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "IMPLICIT")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -282,7 +281,7 @@ func TestSendEmailExplicitTLS(t *testing.T) {
 	os.Setenv("APP_ENV", "development")
 	defer os.Unsetenv("APP_ENV")
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -303,7 +302,7 @@ func TestSendEmailExplicitErrorTLS(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
@@ -331,7 +330,7 @@ func TestSendTLSEmailConnectionError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -386,7 +385,7 @@ func TestSendTLSEmailEHLOError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -447,7 +446,7 @@ func TestSendTLSEmailAUTHError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -509,7 +508,7 @@ func TestSendTLSEmailMailError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -574,7 +573,7 @@ func TestSendTLSEmailRcptError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -641,7 +640,7 @@ func TestSendTLSEmailDataError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(
@@ -715,7 +714,7 @@ func TestSendTLSEmailDataWriteError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewSMTPEmailSenderWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 	assert.NoError(t, err)
 
 	message := newman.NewEmailMessage(

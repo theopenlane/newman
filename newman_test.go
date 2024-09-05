@@ -28,30 +28,28 @@ func TestNewEmailMessage(t *testing.T) {
 	assert.Empty(t, emailMessage.GetHTML())
 }
 
-func TestNewFullEmailMessage(t *testing.T) {
+func TestNewEmailMessageWithOptions(t *testing.T) {
 	from := "newman@usps.com"
 	to := []string{"jerry@seinfeld.com"}
-	cc := []string{"cc@example.com"}
-	bcc := []string{"bcc@example.com"}
-	replyTo := "replyto@example.com"
 	subject := "Look sister, go get yourself a cup of coffee or something"
-	textBody := "Ill tell you a little secret about ZIP codes - they are meaningless"
-	htmlBody := "<p>This is a test HTML body.</p>"
-	attachments := []*Attachment{
-		NewAttachment("test.txt", []byte("test content")),
-	}
+	body := "And three times a week I shall require a cannoli"
+	html := "<p>And three times a week I shall require a cannoli</p>"
 
-	emailMessage := NewFullEmailMessage(from, to, subject, cc, bcc, replyTo, textBody, htmlBody, attachments)
+	emailMessage := NewEmailMessageWithOptions(
+		WithFrom(from),
+		WithTo(to),
+		WithSubject(subject),
+		WithText(body),
+		WithHTML(html),
+	)
 
 	assert.Equal(t, from, emailMessage.GetFrom())
 	assert.Equal(t, to, emailMessage.GetTo())
-	assert.Equal(t, cc, emailMessage.GetCC())
-	assert.Equal(t, bcc, emailMessage.GetBCC())
-	assert.Equal(t, replyTo, emailMessage.GetReplyTo())
 	assert.Equal(t, subject, emailMessage.GetSubject())
-	assert.Equal(t, textBody, emailMessage.GetText())
-	assert.Equal(t, htmlBody, emailMessage.GetHTML())
-	assert.Equal(t, attachments, emailMessage.GetAttachments())
+	assert.Equal(t, body, emailMessage.GetText())
+	assert.Equal(t, html, emailMessage.GetHTML())
+	assert.Empty(t, emailMessage.GetBCC())
+	assert.Empty(t, emailMessage.GetCC())
 }
 
 func TestNewAttachment(t *testing.T) {

@@ -213,6 +213,9 @@ func ExampleEmailMessage_MarshalJSON() {
 	}
 
 	fmt.Println("JSON output:", string(jsonData))
+
+	// Output:
+	// JSON output: {"from":"newman@usps.com","to":["jerry@seinfeld.com"],"cc":["cc@example.com"],"bcc":["bcc@example.com"],"replyTo":"replyto@example.com","subject":"Subject","text":"This is the email content.","html":"\u003cp\u003eThis is the email content.\u003c/p\u003e","attachments":[{"filename":"attachment1.txt","content":"ZmlsZSBjb250ZW50"}]}
 }
 
 func ExampleEmailMessage_UnmarshalJSON() {
@@ -243,4 +246,7 @@ func ExampleEmailMessage_UnmarshalJSON() {
 	}
 
 	fmt.Println("JSON output:", string(jsonData))
+
+	// Output:
+	// JSON output: {"from":"newman@usps.com","to":["jerry@seinfeld.com"],"cc":["cc@example.com"],"bcc":["bcc@example.com"],"replyTo":"replyto@example.com","subject":"Subject","text":"This is the email content.","html":"\u003cp\u003eThis is the email content.\u003c/p\u003e","attachments":[{"filename":"attachment1.txt","content":"ZmlsZSBjb250ZW50"}]}
 }

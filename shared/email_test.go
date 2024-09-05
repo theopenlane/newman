@@ -1,11 +1,11 @@
 package shared
 
 import (
-	"bytes"
 	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/theopenlane/newman/scrubber"
 )
@@ -29,48 +29,56 @@ func TestEmailMessageGetters(t *testing.T) {
 	t.Run("GetFrom", func(t *testing.T) {
 		expected := "newman@usps.com"
 		result := message.GetFrom()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetReplyTo", func(t *testing.T) {
 		expected := "newman@usps.com"
 		result := message.GetReplyTo()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetTo", func(t *testing.T) {
 		expected := []string{"sfunk@funkytown.com", "kwaters@quiddich.com"}
 		result := message.GetTo()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetCC", func(t *testing.T) {
 		expected := []string{"elaine@seinfeld.com", "kramer@seinfeld.com"}
 		result := message.GetCC()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetBCC", func(t *testing.T) {
 		expected := []string{"belaine@seinfeld.com", "bkramer@seinfeld.com"}
 		result := message.GetBCC()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetSubject", func(t *testing.T) {
 		expected := "Look sister, go get yourself a cup of coffee or something"
 		result := message.GetSubject()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetText", func(t *testing.T) {
 		expected := "Test Text"
 		result := message.GetText()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetHTML", func(t *testing.T) {
 		expected := "<h1>Test HTML</h1>"
 		result := message.GetHTML()
+
 		assert.Equal(t, expected, result)
 	})
 
@@ -79,6 +87,7 @@ func TestEmailMessageGetters(t *testing.T) {
 			{Filename: "test.txt", Content: []byte("test content")},
 		}
 		result := message.GetAttachments()
+
 		assert.Equal(t, expected, result)
 	})
 }
@@ -195,54 +204,63 @@ func TestEmailMessageSetters(t *testing.T) {
 	t.Run("SetFrom", func(t *testing.T) {
 		expected := "newman@usps.com"
 		email.SetFrom(expected)
+
 		assert.Equal(t, expected, email.From)
 	})
 
 	t.Run("SetSubject", func(t *testing.T) {
 		expected := "Subject"
 		email.SetSubject(expected)
+
 		assert.Equal(t, expected, email.Subject)
 	})
 
 	t.Run("SetTo", func(t *testing.T) {
 		expected := []string{"jerry@seinfeld.com"}
 		email.SetTo(expected)
+
 		assert.Equal(t, expected, email.To)
 	})
 
 	t.Run("SetCC", func(t *testing.T) {
 		expected := []string{"cc@example.com"}
 		email.SetCC(expected)
+
 		assert.Equal(t, expected, email.Cc)
 	})
 
 	t.Run("SetBCC", func(t *testing.T) {
 		expected := []string{"bcc@example.com"}
 		email.SetBCC(expected)
+
 		assert.Equal(t, expected, email.Bcc)
 	})
 
 	t.Run("SetReplyTo", func(t *testing.T) {
 		expected := "newman@usps.com"
 		email.SetReplyTo(expected)
+
 		assert.Equal(t, expected, email.ReplyTo)
 	})
 
 	t.Run("SetText", func(t *testing.T) {
 		expected := "Text body"
 		email.SetText(expected)
+
 		assert.Equal(t, expected, email.Text)
 	})
 
 	t.Run("SetHTML", func(t *testing.T) {
 		expected := "<p>HTML body</p>"
 		email.SetHTML(expected)
+
 		assert.Equal(t, expected, email.HTML)
 	})
 
 	t.Run("SetAttachments", func(t *testing.T) {
 		attachment := Attachment{Filename: "test.txt", Content: []byte("test content")}
 		email.SetAttachments([]*Attachment{&attachment})
+
 		assert.Contains(t, email.Attachments, &attachment)
 		assert.EqualValues(t, email.Attachments, []*Attachment{&attachment})
 	})
@@ -250,24 +268,28 @@ func TestEmailMessageSetters(t *testing.T) {
 	t.Run("AddAttachment", func(t *testing.T) {
 		attachment := Attachment{Filename: "test.txt", Content: []byte("test content")}
 		email.AddAttachment(&attachment)
+
 		assert.Contains(t, email.Attachments, &attachment)
 	})
 
 	t.Run("AddToRecipient", func(t *testing.T) {
 		recipient := "newjerry@seinfeld.com"
 		email.AddToRecipient(recipient)
+
 		assert.Contains(t, email.To, recipient)
 	})
 
 	t.Run("AddCCRecipient", func(t *testing.T) {
 		recipient := "newcc@example.com"
 		email.AddCCRecipient(recipient)
+
 		assert.Contains(t, email.Cc, recipient)
 	})
 
 	t.Run("AddBCCRecipient", func(t *testing.T) {
 		recipient := "newbcc@example.com"
 		email.AddBCCRecipient(recipient)
+
 		assert.Contains(t, email.Bcc, recipient)
 	})
 }
@@ -306,18 +328,21 @@ func TestIsHTMLEdgeCases(t *testing.T) {
 	t.Run("empty string", func(t *testing.T) {
 		input := ""
 		result := IsHTML(input)
+
 		assert.False(t, result)
 	})
 
 	t.Run("string without HTML tags", func(t *testing.T) {
 		input := "Just a plain text"
 		result := IsHTML(input)
+
 		assert.False(t, result)
 	})
 
 	t.Run("string with incomplete HTML tag", func(t *testing.T) {
 		input := "<div>Test"
 		result := IsHTML(input)
+
 		assert.True(t, result)
 	})
 }
@@ -424,6 +449,7 @@ func TestSetCCEdgeCases(t *testing.T) {
 		email := &EmailMessage{}
 		expected := []string{}
 		email.SetCC(expected)
+
 		assert.Equal(t, expected, email.Cc)
 	})
 }
@@ -433,6 +459,7 @@ func TestSetBCCEdgeCases(t *testing.T) {
 		email := &EmailMessage{}
 		expected := []string{}
 		email.SetBCC(expected)
+
 		assert.Equal(t, expected, email.Bcc)
 	})
 }
@@ -443,6 +470,7 @@ func TestSetMaxAttachmentSize(t *testing.T) {
 	t.Run("SetMaxAttachmentSize", func(t *testing.T) {
 		expected := 10 * 1024 * 1024 // 10 MB
 		email.SetMaxAttachmentSize(expected)
+
 		assert.Equal(t, expected, email.maxAttachmentSize)
 	})
 }
@@ -461,13 +489,16 @@ func TestGetAttachmentsWithMaxSize(t *testing.T) {
 			{Filename: "small.txt", Content: []byte("small content")},
 		}
 		result := email.GetAttachments()
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("GetAttachments with no size limit", func(t *testing.T) {
 		email.SetMaxAttachmentSize(-1)
+
 		expected := email.Attachments
 		result := email.GetAttachments()
+
 		assert.Equal(t, expected, result)
 	})
 }
@@ -504,14 +535,10 @@ func TestBuildMimeMessage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.message.GetSubject(), func(t *testing.T) {
 			result, err := BuildMimeMessage(test.message)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			require.NoError(t, err)
 
 			for _, substring := range test.contains {
-				if !bytes.Contains(result, []byte(substring)) {
-					t.Fatalf("expected result to contain '%s'", substring)
-				}
+				assert.Contains(t, string(result), substring)
 			}
 		})
 	}
@@ -522,12 +549,12 @@ func TestEmailMessageDefaultScrubbersEdgeCases(t *testing.T) {
 
 	t.Run("SetSubject with default scrubber", func(t *testing.T) {
 		subjectInjected := `<Subject> & "attack"`
-
 		expected := `&lt;Subject&gt; &amp; &#34;attack&#34;`
 
 		email.SetSubject(subjectInjected)
 
 		assert.Equal(t, subjectInjected, email.Subject)
+
 		result := email.GetSubject()
 		assert.Equal(t, expected, result)
 	})
@@ -539,6 +566,7 @@ func TestEmailMessageDefaultScrubbersEdgeCases(t *testing.T) {
 
 		email.SetText(testInjected)
 		assert.Equal(t, testInjected, email.Text)
+
 		result := email.GetText()
 		assert.Equal(t, expected, result)
 	})
@@ -550,6 +578,7 @@ func TestEmailMessageDefaultScrubbersEdgeCases(t *testing.T) {
 
 		email.SetHTML(htmlInjected)
 		assert.Equal(t, htmlInjected, email.HTML)
+
 		result := email.GetHTML()
 		assert.Equal(t, expected, result)
 	})
@@ -596,6 +625,7 @@ func TestEmailMessageSettersAndScrubbersEdgeCases(t *testing.T) {
 		expected := `<Subject> & "attack"`
 		email.SetSubject(expected)
 		assert.Equal(t, expected, email.Subject)
+
 		result := email.GetSubject()
 		assert.Equal(t, expected, result)
 	})
@@ -608,6 +638,7 @@ func TestEmailMessageSettersAndScrubbersEdgeCases(t *testing.T) {
 		expected := `Hello <world> & "everyone"`
 		email.SetText(expected)
 		assert.Equal(t, expected, email.Text)
+
 		result := email.GetText()
 		assert.Equal(t, expected, result)
 	})
@@ -619,7 +650,9 @@ func TestEmailMessageSettersAndScrubbersEdgeCases(t *testing.T) {
 
 		expected := `<div><a href="javascript:alert('XSS1')" onmouseover="alert('XSS2')">XSS<a></div>`
 		email.SetHTML(expected)
+
 		assert.Equal(t, expected, email.HTML)
+
 		result := email.GetHTML()
 		assert.Equal(t, expected, result)
 	})
@@ -639,6 +672,7 @@ func TestGetAttachmentsWithEdgeCases(t *testing.T) {
 			{Filename: "small.txt", Content: []byte("small content")},
 		}
 		result := email.GetAttachments()
+
 		assert.Equal(t, expected, result)
 	})
 
@@ -651,9 +685,9 @@ func TestGetAttachmentsWithEdgeCases(t *testing.T) {
 			maxAttachmentSize: -1, // No size limit
 		}
 
-		expected := email.Attachments
 		result := email.GetAttachments()
-		assert.Equal(t, expected, result)
+
+		assert.Equal(t, email.Attachments, result)
 	})
 }
 
@@ -693,14 +727,10 @@ func TestBuildMimeMessageWithScrubbers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.message.GetSubject(), func(t *testing.T) {
 			result, err := BuildMimeMessage(test.message)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			require.NoError(t, err)
 
 			for _, substring := range test.contains {
-				if !bytes.Contains(result, []byte(substring)) {
-					t.Fatalf("expected result to contain '%s'", substring)
-				}
+				assert.Contains(t, string(result), substring)
 			}
 		})
 	}

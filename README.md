@@ -39,18 +39,42 @@ import (
 )
 
 func main() {
-	sender := resend.NewResendEmailSender("your_resend_api_token")
-	msg := newman.NewEmailMessage("no-reply@youremailaddress.com", []string{"mitb@emailsendingfun.com"}, "Isnt sending emails with golang fun?", "Oh Yes! Mark my words, Seinfeld! Your day of reckoning is coming")
+    sender, err := resend.New("your_resend_api_token")
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	if err := sender.SendEmail(context.TODO(), *msg); err != nil {
-		log.Fatal(err)
-	}
+    msg := newman.NewEmailMessageWithOptions(
+        newman.WithFrom("no-reply@youremailaddress.com"),
+        newman.WithTo([]string{"mitb@emailsendingfun.com"}),
+        newman.WithSubject("Isn't sending emails with golang fun?"),
+        newman.WithHTML("<p>Oh Yes! Mark my words, Seinfeld! Your day of reckoning is coming</p>"),
+    )
+
+    if err := sender.SendEmail(msg); err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
-This package supports various email providers and can be extended to include more
+### Development Mode
 
-### Implemented providers
+To switch to development an just log the email to a file instead of sending an email you can use the `mock` provider. With the `resend` provider, this is made easy with the `WithDevMode` option
+
+```go
+    sender, err := resend.New("", resend.WithDevMode("emails"))
+    if err != nil {
+      log.Fatal(err)
+    }
+```
+
+This will put the emails that would be send in the `emails/` directory instead.
+
+
+
+## Implemented Providers
+
+This package supports various email providers and can be extended to include more
 
   - Gmail
   - SendGrid

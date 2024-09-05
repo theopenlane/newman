@@ -2,6 +2,7 @@ package resend
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"net/url"
 	"slices"
@@ -9,53 +10,74 @@ import (
 	"github.com/resend/resend-go/v2"
 
 	"github.com/theopenlane/newman"
+	"github.com/theopenlane/newman/providers/mock"
+	"github.com/theopenlane/newman/shared"
 )
 
-// ResendEmailSender represents a type that is responsible for sending email messages using the Resend service
-type ResendEmailSender struct {
-	client *resend.Client
+// resendEmailSender represents a type that is responsible for sending email messages using the Resend service
+type resendEmailSender struct {
+	client  *resend.Client
+	testDir string
 }
 
-// ResendOption is a type representing a function that modifies a ResendEmailSender
-type ResendOption func(*ResendEmailSender)
+// Option is a type representing a function that modifies a ResendEmailSender
+type Option func(*resendEmailSender)
 
-// NewResendEmailSender is a function that creates a new ResendEmailSender instance.
-func NewResendEmailSender(apikey string, options ...ResendOption) *ResendEmailSender {
-	s := ResendEmailSender{
-		client: resend.NewClient(apikey),
+// New is a function that creates a new resend EmailSender instance.
+func New(apiKey string, options ...Option) (newman.EmailSender, error) {
+	// initialize the resendEmailSender
+	s := &resendEmailSender{
+		client: resend.NewClient(apiKey),
 	}
 
+	// apply the options
 	for _, option := range options {
-		option(&s)
+		option(s)
 	}
 
-	return &s
+	// if the testDir is set, we will use the mock provider
+	if s.testDir != "" {
+		return mock.New(s.testDir)
+	}
+
+	// ensure there is an API key when using the Resend client
+	if s.client.ApiKey == "" {
+		return nil, ErrMissingAPIKey
+	}
+
+	return s, nil
 }
 
 // WithClient is an option that allows to set a custom Resend client
-func WithClient(client *resend.Client) ResendOption {
-	return func(s *ResendEmailSender) {
+func WithClient(client *resend.Client) Option {
+	return func(s *resendEmailSender) {
 		s.client = client
 	}
 }
 
+func WithDevMode(path string) Option {
+	return func(s *resendEmailSender) {
+		s.testDir = path
+	}
+}
+
 // WithBaseURL is an option that allows to set a custom base URL for the Resend client
-func WithBaseURL(baseURL url.URL) ResendOption {
-	return func(s *ResendEmailSender) {
+func WithBaseURL(baseURL url.URL) Option {
+	return func(s *resendEmailSender) {
 		s.client.BaseURL = &baseURL
 	}
 }
 
 // WithUserAgent is an option that allows to set a custom user agent for the Resend client
-func WithUserAgent(userAgent string) ResendOption {
-	return func(s *ResendEmailSender) {
+func WithUserAgent(userAgent string) Option {
+	return func(s *resendEmailSender) {
 		s.client.UserAgent = userAgent
 	}
 }
 
 // WithFilePath is an option that allows to set a custom file path for the Resend client
-func WithFilepath(filepath string) ResendOption {
-	return func(s *ResendEmailSender) {
+func WithFilepath(filepath string) Option {
+	return func(s *resendEmailSender) {
 		func() *resend.SendEmailRequest {
 			return &resend.SendEmailRequest{
 				Attachments: []*resend.Attachment{
@@ -69,15 +91,15 @@ func WithFilepath(filepath string) ResendOption {
 }
 
 // WithAPIKey is an option that allows to set a custom API key for the Resend client
-func WithAPIKey(apikey string) ResendOption {
-	return func(s *ResendEmailSender) {
-		s.client.ApiKey = apikey
+func WithAPIKey(apiKey string) Option {
+	return func(s *resendEmailSender) {
+		s.client.ApiKey = apiKey
 	}
 }
 
 // WithHeaders is an option that allows to set a custom headers for the Resend client
-func WithHeaders(headers map[string]string) ResendOption {
-	return func(s *ResendEmailSender) {
+func WithHeaders(headers map[string]string) Option {
+	return func(s *resendEmailSender) {
 		func() *resend.SendEmailRequest {
 			return &resend.SendEmailRequest{
 				Headers: maps.Clone(headers),
@@ -86,8 +108,17 @@ func WithHeaders(headers map[string]string) ResendOption {
 	}
 }
 
-// SendEmail sends an email message using the Resend service
-func (s *ResendEmailSender) SendEmail(ctx context.Context, message newman.EmailMessage) error {
+// SendEmail satisfies the EmailSender interface
+func (s *resendEmailSender) SendEmail(message *newman.EmailMessage) error {
+	return s.SendEmailWithContext(context.Background(), message)
+}
+
+// SendEmailWithContext satisfies the EmailSender interface
+func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
+	if err := shared.ValidateEmailMessage(message); err != nil {
+		return err
+	}
+
 	msgToSend := resend.SendEmailRequest{
 		From:        message.From,
 		To:          slices.Clone(message.To),
@@ -123,7 +154,7 @@ func (s *ResendEmailSender) SendEmail(ctx context.Context, message newman.EmailM
 	}
 
 	if _, err := s.client.Emails.SendWithContext(ctx, &msgToSend); err != nil {
-		return ErrFailedToSendEmail
+		return fmt.Errorf("%w: %w", ErrFailedToSendEmail, err)
 	}
 
 	return nil
