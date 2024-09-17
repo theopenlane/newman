@@ -40,6 +40,6 @@ issues:
   exclude-dirs:
     - .buildkite/*
     - .github/*
-    - docker/*
-    - test/*
+    - providers/mock/*
+    - testdata/*
   exclude-files: []
