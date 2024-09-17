@@ -7,7 +7,7 @@
 # newman
 
 Newman is the postal worker that lives down the hall, delivering your email like a ring-tailed lemur. The newman project allows you to send emails using different email providers
-such as Gmail, SendGrid, etc.
+such as [Resend](https://resend.com/), mailgun, etc.
 
 ![newman](img/newman.png)
 
@@ -74,14 +74,14 @@ This will put the emails that would be send in the `emails/` directory instead.
 
 ## Implemented Providers
 
-This package supports various email providers and can be extended to include more
-
+This package supports various email providers and can be extended to include more. NOTE: we use [Resend](https://resend.com/) for our production service and will invest in that provider more than others.
+ 
+  - Resend
   - Gmail
   - SendGrid
   - Mailgun
   - Postmark
   - SMTP
-  - Resend
 
 ## Contributing
 
