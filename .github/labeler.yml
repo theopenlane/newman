@@ -19,6 +19,9 @@ local-development:
       - any-glob-to-any-file: scripts/**
       - any-glob-to-any-file: Taskfile.yaml
       - any-glob-to-any-file: docker/**
-cli:
+providers:
   - changed-files:
-      - any-glob-to-any-file: cmd/**
+      - any-glob-to-any-file: providers/**
+shared:
+  - changed-files:
+      - any-glob-to-any-file: shared/**

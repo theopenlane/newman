@@ -25,7 +25,18 @@ This project is organized into several sub-packages:
 
 ## Usage
 
-To use the library, you need to import the desired provider package and create an instance of the email sender then call the `sendmail` function
+Prereqs:
+
+- Go 1.22+
+- Access to the relevant email service provider (Resend is our choice!) to get credentials and such
+
+### Adding to your project
+
+```bash
+go get github.com/theopenlane/newman
+```
+
+Additionally, you'll need to import the desired provider package and create an instance of the email sender then call the `sendemail` function
 
 ```go
 package main
@@ -39,7 +50,7 @@ import (
 )
 
 func main() {
-    sender, err := resend.New("your_resend_api_token")
+    sender, err := resend.New(token, opts...)
     if err != nil {
         log.Fatal(err)
     }
@@ -68,9 +79,7 @@ To switch to development an just log the email to a file instead of sending an e
     }
 ```
 
-This will put the emails that would be send in the `emails/` directory instead.
-
-
+This will put the emails that would be send in the `emails/` directory instead
 
 ## Implemented Providers
 
@@ -85,4 +94,4 @@ This package supports various email providers and can be extended to include mor
 
 ## Contributing
 
-See the [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) guide for more information
+See the [contributing](.github/CONTRIBUTING.md) guide for more information.
