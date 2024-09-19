@@ -6,7 +6,7 @@ Given external users will not have write to the branches in this repository, you
 
 ## Licensing
 
-This repository contains open source software that comprises the Openlane stack which is open source software under [Apache 2.0](LICENSE). Openlane's SaaS / Cloud Services are products produced from this open source software exclusively by theopenlane, Inc. This product is produced under our published commercial terms (which are subject to change). Any logos or trademarks in our repositories in [theOpenlane](https://github.com/theOpenlane) organization are not covered under the Apache License and are trademarks of theopenlane, Inc.
+This repository contains open source software that comprises the Openlane stack which is open source software under [Apache 2.0](LICENSE). Openlane's SaaS / Cloud Services are products produced from this open source software exclusively by theopenlane, Inc. This product is produced under our published commercial terms (which are subject to change). Any logos or trademarks in our repositories in [theopenlane](https://github.com/theopenlane) organization are not covered under the Apache License and are trademarks of theopenlane, Inc.
 
 Others are allowed to make their own distribution of this software or include this software in other commercial offerings, but cannot use any of the Openlane logos, trademarks, cloud services, etc.
 
