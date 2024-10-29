@@ -77,8 +77,8 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/mailgun/errors v0.3.0 h1:g8R8lodkwqk5WIVMAClyUqt0PSd5JTVgobB+H7C2sLs=
 github.com/mailgun/errors v0.3.0/go.mod h1:+ltknP+jhv3gZ1StKY6ugoQECcPxDCaSdmYesqTZcLQ=
-github.com/mailgun/mailgun-go/v4 v4.17.1 h1:J81Wm/cQdKbDSwTl9CntVNPA6urdXgYzV+nh+JfhYiw=
-github.com/mailgun/mailgun-go/v4 v4.17.1/go.mod h1:0ood70bQR/SffQ9NxIsAY06H+HG0hrvMVApfUp9TihI=
+github.com/mailgun/mailgun-go/v4 v4.17.3 h1:WoO48/VeXgAVSzjgzyeLvF08AoPzWU2EBz79INN8rEA=
+github.com/mailgun/mailgun-go/v4 v4.17.3/go.mod h1:0ood70bQR/SffQ9NxIsAY06H+HG0hrvMVApfUp9TihI=
 github.com/microcosm-cc/bluemonday v1.0.27 h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwXFM08ygZfk=
 github.com/microcosm-cc/bluemonday v1.0.27/go.mod h1:jFi9vgW+H7c3V0lb6nR74Ib/DIB5OBs92Dimizgw2cA=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
