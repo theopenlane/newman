@@ -1,6 +1,6 @@
 module github.com/theopenlane/newman
 
-go 1.23.1
+go 1.23.3
 
 require (
 	github.com/mailgun/mailgun-go/v4 v4.17.3
