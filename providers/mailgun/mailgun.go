@@ -23,6 +23,7 @@ func WithEurope() Option {
 	}
 }
 
+// New creates a new mailgunEmailSender
 func New(domain, apiKey string, opts ...Option) (newman.EmailSender, error) {
 	if apiKey == "" {
 		return nil, ErrMissingAPIKey
@@ -46,7 +47,7 @@ func (s *mailgunEmailSender) SendEmail(message *newman.EmailMessage) error {
 
 // SendEmailWithContext satisfies the EmailSender interface
 func (s *mailgunEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
-	mailMessage := s.client.NewMessage(message.From, message.Subject, message.Text, message.To...)
+	mailMessage := mailgun.NewMessage(message.From, message.Subject, message.Text, message.To...)
 
 	if _, _, err := s.client.Send(ctx, mailMessage); err != nil {
 		return fmt.Errorf("send message: %w", err)
