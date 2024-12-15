@@ -9,7 +9,7 @@ require (
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/stretchr/testify v1.10.0
-	github.com/theopenlane/httpsling v0.2.1
+	github.com/theopenlane/httpsling v0.2.2
 	golang.org/x/oauth2 v0.24.0
 	google.golang.org/api v0.210.0
 )
@@ -37,7 +37,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/theopenlane/echox v0.2.0 // indirect
-	github.com/theopenlane/utils v0.2.1 // indirect
+	github.com/theopenlane/utils v0.4.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
 	go.opentelemetry.io/otel v1.29.0 // indirect
