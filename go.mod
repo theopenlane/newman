@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/mailgun/mailgun-go/v4 v4.21.0
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/resend/resend-go/v2 v2.13.0
+	github.com/resend/resend-go/v2 v2.14.0
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/stretchr/testify v1.10.0
@@ -44,7 +44,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
