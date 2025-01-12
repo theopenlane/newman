@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/mailgun/mailgun-go/v4 v4.21.0
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/resend/resend-go/v2 v2.13.0
+	github.com/resend/resend-go/v2 v2.14.0
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/stretchr/testify v1.10.0
