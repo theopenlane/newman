@@ -3,7 +3,7 @@ module github.com/theopenlane/newman
 go 1.23.3
 
 require (
-	github.com/mailgun/mailgun-go/v4 v4.21.0
+	github.com/mailgun/mailgun-go/v4 v4.22.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/resend/resend-go/v2 v2.15.0
 	github.com/sendgrid/rest v2.6.9+incompatible
@@ -21,7 +21,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-chi/chi/v5 v5.1.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
