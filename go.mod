@@ -3,7 +3,7 @@ module github.com/theopenlane/newman
 go 1.23.3
 
 require (
-	github.com/mailgun/mailgun-go/v4 v4.22.2
+	github.com/mailgun/mailgun-go/v4 v4.22.3
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/resend/resend-go/v2 v2.15.0
 	github.com/sendgrid/rest v2.6.9+incompatible
