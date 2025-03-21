@@ -69,11 +69,8 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/mailgun/errors v0.4.0 h1:6LFBvod6VIW83CMIOT9sYNp28TCX0NejFPP4dSX++i8=
 github.com/mailgun/errors v0.4.0/go.mod h1:xGBaaKdEdQT0/FhwvoXv4oBaqqmVZz9P1XEnvD/onc0=
-github.com/mailgun/mailgun-go/v4 v4.22.3 h1:I8H6TkodlQ7NAamxUTe2JI1COg/mJfnTTQoQE7dxmDU=
-github.com/mailgun/mailgun-go/v4 v4.22.3/go.mod h1:imTtizoFtpfZqPqGP8vltVBB6q9yWcv6llBhfFeElZU=
 github.com/mailgun/mailgun-go/v4 v4.23.0 h1:jPEMJzzin2s7lvehcfv/0UkyBu18GvcURPr2+xtZRbk=
 github.com/mailgun/mailgun-go/v4 v4.23.0/go.mod h1:imTtizoFtpfZqPqGP8vltVBB6q9yWcv6llBhfFeElZU=
-github.com/mailgun/mailgun-go/v5 v5.0.0/go.mod h1:lU23ttJEVElVosWFfGEEwIl68+nP+w0SJ0s6osHUn38=
 github.com/microcosm-cc/bluemonday v1.0.27 h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwXFM08ygZfk=
 github.com/microcosm-cc/bluemonday v1.0.27/go.mod h1:jFi9vgW+H7c3V0lb6nR74Ib/DIB5OBs92Dimizgw2cA=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
@@ -85,8 +82,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
-github.com/resend/resend-go/v2 v2.15.0 h1:B6oMEPf8IEQwn2Ovx/9yymkESLDSeNfLFaNMw+mzHhE=
-github.com/resend/resend-go/v2 v2.15.0/go.mod h1:3YCb8c8+pLiqhtRFXTyFwlLvfjQtluxOr9HEh2BwCkQ=
+github.com/resend/resend-go/v2 v2.16.0 h1:Z3IVyK3oIgZoWjBl4MtCv/XSXETZ0mhIVOaBixQ8CIM=
+github.com/resend/resend-go/v2 v2.16.0/go.mod h1:3YCb8c8+pLiqhtRFXTyFwlLvfjQtluxOr9HEh2BwCkQ=
 github.com/sendgrid/rest v2.6.9+incompatible h1:1EyIcsNdn9KIisLW50MKwmSRSK+ekueiEMJ7NEoxJo0=
 github.com/sendgrid/rest v2.6.9+incompatible/go.mod h1:kXX7q3jZtJXK5c5qK83bSGMdV6tsOE70KbHoqJls4lE=
 github.com/sendgrid/sendgrid-go v3.16.0+incompatible h1:i8eE6IMkiCy7vusSdacHHSBUpXyTcTXy/Rl9N9aZ/Qw=
