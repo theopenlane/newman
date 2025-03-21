@@ -27,7 +27,7 @@ This project is organized into several sub-packages:
 
 Prereqs:
 
-- Go 1.22+
+- Go 1.24+
 - Access to the relevant email service provider (Resend is our choice!) to get credentials and such
 
 ### Adding to your project
@@ -84,7 +84,7 @@ This will put the emails that would be send in the `emails/` directory instead
 ## Implemented Providers
 
 This package supports various email providers and can be extended to include more. NOTE: we use [Resend](https://resend.com/) for our production service and will invest in that provider more than others.
- 
+
   - Resend
   - Gmail
   - SendGrid

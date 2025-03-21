@@ -21,7 +21,7 @@ steps:
         cancel_on_build_failing: true
         plugins:
           - docker#v5.12.0:
-              image: golang:1.23.3
+              image: golang:1.24.1
               always-pull: true
               command: ["go", "test", "-coverprofile=coverage.out", "./..."]
               environment:
@@ -39,7 +39,7 @@ steps:
               download: "coverage.out"
               step: "go_test"
           - docker#v5.12.0:
-              image: "sonarsource/sonar-scanner-cli:11.0"
+              image: "sonarsource/sonar-scanner-cli:11.2"
               environment:
                 - "SONAR_TOKEN"
                 - "SONAR_HOST_URL=$SONAR_HOST"
@@ -56,7 +56,7 @@ steps:
               download: coverage.out
               step: "go_test"
           - docker#v5.12.0:
-              image: "sonarsource/sonar-scanner-cli:11.0"
+              image: "sonarsource/sonar-scanner-cli:11.2"
               environment:
                 - "SONAR_TOKEN"
                 - "SONAR_HOST_URL=$SONAR_HOST"
