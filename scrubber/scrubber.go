@@ -7,7 +7,7 @@ type Scrubber interface {
 }
 
 // ScrubberFunc is an adapter that allows the use of functions as Scrubbers
-type ScrubberFunc func(message string) string
+type ScrubberFunc func(message string) string //nolint:revive
 
 // Scrub calls the function f with the given message
 func (f ScrubberFunc) Scrub(message string) string {

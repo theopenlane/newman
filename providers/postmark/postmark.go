@@ -60,7 +60,7 @@ func (s *postmarkEmailSender) SendEmail(message *newman.EmailMessage) error {
 }
 
 // SendEmailWithContext satisfies the EmailSender interface
-func (s *postmarkEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
+func (s *postmarkEmailSender) SendEmailWithContext(_ context.Context, message *newman.EmailMessage) error {
 	emailStruct := email{
 		From:     message.GetFrom(),
 		To:       strings.Join(message.GetTo(), ","),

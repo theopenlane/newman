@@ -9,7 +9,7 @@ import (
 
 type MockEmailSender struct{}
 
-func (m *MockEmailSender) SendEmail(message *EmailMessage) error {
+func (m *MockEmailSender) SendEmail(_ *EmailMessage) error {
 	return nil
 }
 

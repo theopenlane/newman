@@ -55,7 +55,7 @@ func (s *smtpEmailSender) SendEmail(message *newman.EmailMessage) error {
 }
 
 // SendEmailWithContext satisfies the EmailSender interface
-func (s *smtpEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
+func (s *smtpEmailSender) SendEmailWithContext(_ context.Context, message *newman.EmailMessage) error {
 	sendMailTo := message.GetTo()
 	sendMailTo = append(sendMailTo, message.GetCC()...)
 	sendMailTo = append(sendMailTo, message.GetBCC()...)
@@ -83,10 +83,7 @@ func (s *smtpEmailSender) send(auth smtp.Auth, from string, to []string, message
 
 func (s *smtpEmailSender) secureSend(auth smtp.Auth, from string, to []string, message []byte) error {
 	// TODO: this should be updated to not use environment variables
-	skipInsecure := false
-	if os.Getenv("APP_ENV") == "development" {
-		skipInsecure = true
-	}
+	skipInsecure := os.Getenv("APP_ENV") == "development"
 
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: skipInsecure, // nolint: gosec

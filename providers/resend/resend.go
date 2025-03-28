@@ -77,7 +77,7 @@ func WithUserAgent(userAgent string) Option {
 
 // WithFilePath is an option that allows to set a custom file path for the Resend client
 func WithFilepath(filepath string) Option {
-	return func(s *resendEmailSender) {
+	return func(_ *resendEmailSender) {
 		func() *resend.SendEmailRequest {
 			return &resend.SendEmailRequest{
 				Attachments: []*resend.Attachment{
@@ -99,7 +99,7 @@ func WithAPIKey(apiKey string) Option {
 
 // WithHeaders is an option that allows to set a custom headers for the Resend client
 func WithHeaders(headers map[string]string) Option {
-	return func(s *resendEmailSender) {
+	return func(_ *resendEmailSender) {
 		func() *resend.SendEmailRequest {
 			return &resend.SendEmailRequest{
 				Headers: maps.Clone(headers),
