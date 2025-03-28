@@ -27,7 +27,7 @@ func (s *gmailEmailSender) SendEmail(message *newman.EmailMessage) error {
 }
 
 // SendEmailWithContext satisfies the EmailSender interface
-func (s *gmailEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
+func (s *gmailEmailSender) SendEmailWithContext(_ context.Context, message *newman.EmailMessage) error {
 	mimeMessage, err := newman.BuildMimeMessage(message)
 	if err != nil {
 		return ErrUnableToBuildMIMEMessage
