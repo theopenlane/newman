@@ -4,6 +4,7 @@ go 1.24.1
 
 require (
 	github.com/mailgun/mailgun-go/v4 v4.23.0
+	github.com/mailgun/mailgun-go/v5 v5.2.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/resend/resend-go/v2 v2.17.0
 	github.com/sendgrid/rest v2.6.9+incompatible
