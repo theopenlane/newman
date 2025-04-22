@@ -11,7 +11,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/theopenlane/httpsling v0.2.2
 	golang.org/x/oauth2 v0.29.0
-	google.golang.org/api v0.210.0
+	google.golang.org/api v0.230.0
 )
 
 require (
