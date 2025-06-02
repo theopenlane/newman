@@ -6,6 +6,7 @@ import (
 	"maps"
 	"net/url"
 	"slices"
+	"strings"
 
 	"github.com/resend/resend-go/v2"
 
@@ -153,7 +154,11 @@ func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *n
 		msgToSend.Tags = append(msgToSend.Tags, resendTag)
 	}
 
-	if _, err := s.client.Emails.SendWithContext(ctx, &msgToSend); err != nil {
+	_, err := s.client.Emails.SendWithContext(ctx, &msgToSend)
+
+	// if it is a test email, resend sdk does not return a specific error so check for it
+	// if it is a test email, we should not return an error
+	if err != nil && !strings.Contains(err.Error(), "use our testing email address") {
 		return fmt.Errorf("%w: %w", ErrFailedToSendEmail, err)
 	}
 
