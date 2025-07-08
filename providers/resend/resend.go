@@ -156,10 +156,16 @@ func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *n
 
 	_, err := s.client.Emails.SendWithContext(ctx, &msgToSend)
 
-	// if it is a test email, resend sdk does not return a specific error so check for it
-	// if it is a test email, we should not return an error
-	if err != nil && !strings.Contains(err.Error(), "use our testing email address") {
-		return fmt.Errorf("%w: %w", ErrFailedToSendEmail, err)
+	if err != nil {
+		// resend sdk does not return a specific error so check for it
+		if strings.Contains(strings.ToLower(err.Error()), "too many requests") {
+			return newman.NewRetryableError(err)
+		}
+
+		// if it is a test email, we should not return an error
+		if !strings.Contains(err.Error(), "use our testing email address") {
+			return fmt.Errorf("%w: %w", ErrFailedToSendEmail, err)
+		}
 	}
 
 	return nil

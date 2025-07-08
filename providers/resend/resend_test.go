@@ -193,3 +193,39 @@ func TestSendEmailValidateFail(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "to is required")
 }
+
+func testServerTooManyRequests(t *testing.T) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+
+		_, err := w.Write([]byte(`{"message": "too many requests - rate limit exceeded"}`))
+		require.NoError(t, err)
+	}))
+}
+
+func TestSendEmailRetryable(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	ts := testServerTooManyRequests(t)
+	defer ts.Close()
+
+	mockClient := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	mockClient.BaseURL = baseURL
+
+	emailSender, err := New(apiKey, WithClient(mockClient))
+	assert.NoError(t, err)
+
+	message := newman.NewEmailMessageWithOptions(
+		newman.WithFrom("newman@usps.com"),
+		newman.WithTo([]string{"jerry@seinfeld.com"}),
+		newman.WithSubject("Test Email"),
+		newman.WithText("The air is so dewy sweet you dont even have to lick the stamps"),
+	)
+
+	err = emailSender.SendEmailWithContext(context.Background(), message)
+	assert.Error(t, err)
+	assert.True(t, newman.IsRetryableError(err))
+}
