@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/resend/resend-go/v2"
+	"github.com/resend/resend-go/v3"
 
 	"github.com/theopenlane/newman"
 	"github.com/theopenlane/newman/providers/mock"
@@ -155,7 +155,6 @@ func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *n
 	}
 
 	_, err := s.client.Emails.SendWithContext(ctx, &msgToSend)
-
 	if err != nil {
 		// resend sdk does not return a specific error so check for it
 		if strings.Contains(strings.ToLower(err.Error()), "too many requests") {

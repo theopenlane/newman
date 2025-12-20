@@ -5,16 +5,16 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: detect-private-key
         exclude: providers/gmail/gmail_test.go
   - repo: https://github.com/google/yamlfmt
-    rev: v0.16.0
+    rev: v0.20.0
     hooks:
       - id: yamlfmt
   - repo: https://github.com/crate-ci/typos
-    rev: v1.30.2
+    rev: v1.40.0
     hooks:
       - id: typos
