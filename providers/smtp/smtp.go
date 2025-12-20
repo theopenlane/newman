@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/smtp"
-	"os"
 
 	"github.com/theopenlane/newman"
 )
@@ -30,6 +29,8 @@ type smtpEmailSender struct {
 	authMethod string
 	// The connection method to use (by default implicit)
 	connectionMethod string
+	// tlsConfig allows custom TLS configuration for testing
+	tlsConfig *tls.Config
 }
 
 // New creates a new instance of smtpEmailSender
@@ -40,12 +41,13 @@ func New(host string, port int, user, password string, authMethod string) (newma
 // NewWithConnMethod creates a new instance of smtpEmailSender with the specified connection method
 func NewWithConnMethod(host string, port int, user, password string, authMethod string, connectionMethod string) (newman.EmailSender, error) {
 	return &smtpEmailSender{
-		host,
-		port,
-		user,
-		password,
-		authMethod,
-		connectionMethod,
+		host:             host,
+		port:             port,
+		user:             user,
+		password:         password,
+		authMethod:       authMethod,
+		connectionMethod: connectionMethod,
+		tlsConfig:        nil,
 	}, nil
 }
 
@@ -55,7 +57,11 @@ func (s *smtpEmailSender) SendEmail(message *newman.EmailMessage) error {
 }
 
 // SendEmailWithContext satisfies the EmailSender interface
-func (s *smtpEmailSender) SendEmailWithContext(_ context.Context, message *newman.EmailMessage) error {
+func (s *smtpEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	sendMailTo := message.GetTo()
 	sendMailTo = append(sendMailTo, message.GetCC()...)
 	sendMailTo = append(sendMailTo, message.GetBCC()...)
@@ -71,7 +77,7 @@ func (s *smtpEmailSender) SendEmailWithContext(_ context.Context, message *newma
 	}
 
 	if s.connectionMethod == TLSConnection {
-		return s.secureSend(auth, message.GetFrom(), sendMailTo, msg)
+		return s.secureSend(ctx, auth, message.GetFrom(), sendMailTo, msg)
 	}
 
 	return s.send(auth, message.GetFrom(), sendMailTo, msg)
@@ -81,16 +87,18 @@ func (s *smtpEmailSender) send(auth smtp.Auth, from string, to []string, message
 	return smtp.SendMail(fmt.Sprintf("%s:%d", s.host, s.port), auth, from, to, message)
 }
 
-func (s *smtpEmailSender) secureSend(auth smtp.Auth, from string, to []string, message []byte) error {
-	// TODO: this should be updated to not use environment variables
-	skipInsecure := os.Getenv("APP_ENV") == "development"
-
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: skipInsecure, // nolint: gosec
-		ServerName:         s.host,
+func (s *smtpEmailSender) secureSend(ctx context.Context, auth smtp.Auth, from string, to []string, message []byte) error {
+	tlsConfig := s.tlsConfig
+	if tlsConfig == nil {
+		tlsConfig = &tls.Config{
+			ServerName: s.host,
+			MinVersion: tls.VersionTLS12,
+		}
 	}
 
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", s.host, s.port), tlsConfig)
+	dialer := tls.Dialer{Config: tlsConfig}
+
+	conn, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", s.host, s.port))
 	if err != nil {
 		return err
 	}

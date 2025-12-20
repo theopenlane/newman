@@ -21,7 +21,7 @@ steps:
         cancel_on_build_failing: true
         plugins:
           - docker#v5.13.0:
-              image: golang:1.24.1
+              image: golang:1.25.5
               always-pull: true
               command: ["go", "test", "-coverprofile=coverage.out", "./..."]
               environment:

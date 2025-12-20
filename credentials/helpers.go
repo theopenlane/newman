@@ -11,7 +11,6 @@ import (
 // ParseCredentials parses the OAuth2 credentials JSON byte slice and returns an *oauth2.Config
 func ParseCredentials(credentialsJSON []byte) (*oauth2.Config, error) {
 	config, err := google.ConfigFromJSON(credentialsJSON, gmail.GmailSendScope)
-
 	if err != nil {
 		return nil, ErrFailedToLoadCredentials
 	}

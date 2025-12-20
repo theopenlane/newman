@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"strings"
 	"testing"
 
@@ -128,7 +127,8 @@ func tlsHandler(handler func(conn net.Conn)) func(conn net.Conn) {
 
 		tlsConn := tls.Server(conn, &tls.Config{
 			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: true, // nolint: gosec
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
 		})
 
 		err := tlsConn.Handshake()
@@ -153,6 +153,22 @@ func decodeConnectionCommand(cmd, message string) []string {
 	trimmedDecoded := strings.Trim(string(decoded), "\x00")
 
 	return strings.Split(trimmedDecoded, "\x00")
+}
+
+// newTestSMTPSender creates an SMTP sender with InsecureSkipVerify for testing
+func newTestSMTPSender(host string, port int, user, password, authMethod, connMethod string) *smtpEmailSender {
+	return &smtpEmailSender{
+		host:             host,
+		port:             port,
+		user:             user,
+		password:         password,
+		authMethod:       authMethod,
+		connectionMethod: connMethod,
+		tlsConfig: &tls.Config{
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
+		},
+	}
 }
 func TestNewSMTPEmailSender(t *testing.T) {
 	emailSender, err := New("smtp.example.com", 587, "user", "We gotta find that rickshaw", "PLAIN")
@@ -278,11 +294,7 @@ func TestSendEmailExplicitTLS(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps")
 
@@ -319,9 +331,6 @@ func TestSendTLSEmailConnectionError(t *testing.T) {
 			}))
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -330,8 +339,7 @@ func TestSendTLSEmailConnectionError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -374,9 +382,6 @@ func TestSendTLSEmailEHLOError(t *testing.T) {
 
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -385,8 +390,7 @@ func TestSendTLSEmailEHLOError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -435,9 +439,6 @@ func TestSendTLSEmailAUTHError(t *testing.T) {
 
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -446,8 +447,7 @@ func TestSendTLSEmailAUTHError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -497,9 +497,6 @@ func TestSendTLSEmailMailError(t *testing.T) {
 			}))
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -508,8 +505,7 @@ func TestSendTLSEmailMailError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -562,9 +558,6 @@ func TestSendTLSEmailRcptError(t *testing.T) {
 
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -573,8 +566,7 @@ func TestSendTLSEmailRcptError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -629,9 +621,6 @@ func TestSendTLSEmailDataError(t *testing.T) {
 
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -640,8 +629,7 @@ func TestSendTLSEmailDataError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
@@ -703,9 +691,6 @@ func TestSendTLSEmailDataWriteError(t *testing.T) {
 
 	defer server.Close()
 
-	os.Setenv("APP_ENV", "development")
-	defer os.Unsetenv("APP_ENV")
-
 	host, port, _ := net.SplitHostPort(server.addr)
 	portInt := 25 // nolint: mnd
 
@@ -714,8 +699,7 @@ func TestSendTLSEmailDataWriteError(t *testing.T) {
 		t.Errorf("failed to parse port: %v", err)
 	}
 
-	emailSender, err := NewWithConnMethod(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
-	assert.NoError(t, err)
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
 
 	message := newman.NewEmailMessage(
 		"newman@usps.com",
