@@ -28,9 +28,11 @@ func NewEmailMessage(from string, to []string, subject string, body string) *Ema
 	return shared.NewEmailMessage(from, to, subject, body)
 }
 
-// NewEmailMessageWithOptions creates a new EmailMessage with the specified options.
+// NewEmailMessageWithOptions creates a new EmailMessage with the specified options
 func NewEmailMessageWithOptions(options ...MessageOption) *EmailMessage {
-	s := EmailMessage{}
+	s := EmailMessage{
+		Headers: map[string]string{},
+	}
 
 	for _, option := range options {
 		option(&s)
