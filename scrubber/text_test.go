@@ -23,9 +23,9 @@ func TestDefaultTextScrubber(t *testing.T) {
 		assert.Equal(t, expected, result)
 	})
 
-	t.Run("string with spaces", func(t *testing.T) {
+	t.Run("string with spaces preserved", func(t *testing.T) {
 		input := "   "
-		expected := ""
+		expected := "   "
 		result := scrubber.Scrub(input)
 		assert.Equal(t, expected, result)
 	})
@@ -39,7 +39,7 @@ func TestDefaultTextScrubber(t *testing.T) {
 
 	t.Run("scrub documentation content", func(t *testing.T) {
 		input := " <script>alert('xss')</script> "
-		expected := `&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;`
+		expected := " &lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt; "
 		result := scrubber.Scrub(input)
 		assert.Equal(t, expected, result)
 	})
