@@ -1,16 +1,13 @@
 package scrubber
 
-import (
-	"html"
-	"strings"
-)
+import "html"
 
 // defaultTextScrubber provides a basic implementation of the Scrubber interface for plain text content
 type defaultTextScrubber struct{}
 
-// Scrub scrubs plain text content by escaping special characters and trimming whitespace
+// Scrub escapes HTML special characters in plain text content to prevent injection when rendered in an HTML context
 func (s *defaultTextScrubber) Scrub(text string) string {
-	return html.EscapeString(strings.TrimSpace(text))
+	return html.EscapeString(text)
 }
 
 var defaultTextScrubberInstance = &defaultTextScrubber{}

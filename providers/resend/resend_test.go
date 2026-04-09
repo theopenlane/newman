@@ -2,6 +2,7 @@ package resend
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -201,6 +202,87 @@ func testServerTooManyRequests(t *testing.T) *httptest.Server {
 		_, err := w.Write([]byte(`{"message": "too many requests - rate limit exceeded"}`))
 		require.NoError(t, err)
 	}))
+}
+
+// TestSendEmailWithContext_RequestPayload verifies that SendEmailWithContext builds the outbound
+// resend.SendEmailRequest using the getter methods on EmailMessage rather than raw field access.
+// The critical difference: getters validate and filter addresses, so invalid entries are dropped
+// rather than forwarded verbatim to the provider.
+func TestSendEmailWithContext_RequestPayload(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	var captured resend.SendEmailRequest
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&captured))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id": "sent"}`))
+	}))
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+	mc.BaseURL = baseURL
+
+	sender := &resendEmailSender{client: mc}
+
+	msg := newman.NewEmailMessageWithOptions(
+		newman.WithFrom("sender@example.com"),
+		newman.WithTo([]string{"to@example.com"}),
+		newman.WithSubject("Hello"),
+		newman.WithHTML("<p>Body</p>"),
+		newman.WithText("Body"),
+		newman.WithCc([]string{"cc@example.com"}),
+		newman.WithBcc([]string{"bcc@example.com"}),
+		newman.WithReplyTo("reply@example.com"),
+	)
+
+	require.NoError(t, sender.SendEmailWithContext(context.Background(), msg))
+
+	assert.Equal(t, "sender@example.com", captured.From)
+	assert.Equal(t, []string{"to@example.com"}, captured.To)
+	assert.Equal(t, []string{"cc@example.com"}, captured.Cc)
+	assert.Equal(t, []string{"bcc@example.com"}, captured.Bcc)
+	assert.Equal(t, "reply@example.com", captured.ReplyTo)
+	assert.Equal(t, "Hello", captured.Subject)
+	assert.Contains(t, captured.Html, "<p>Body</p>")
+	assert.Equal(t, "Body", captured.Text)
+}
+
+// TestSendEmailWithContext_InvalidAddressesFiltered verifies that invalid addresses in CC and BCC
+// are dropped by the getter validation rather than forwarded to the provider.
+func TestSendEmailWithContext_InvalidAddressesFiltered(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	var captured resend.SendEmailRequest
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&captured))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id": "sent"}`))
+	}))
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+	mc.BaseURL = baseURL
+
+	sender := &resendEmailSender{client: mc}
+
+	msg := newman.NewEmailMessageWithOptions(
+		newman.WithFrom("sender@example.com"),
+		newman.WithTo([]string{"to@example.com"}),
+		newman.WithSubject("Hello"),
+		newman.WithCc([]string{"valid@example.com", "not-an-email"}),
+		newman.WithBcc([]string{"not-an-email"}),
+	)
+
+	require.NoError(t, sender.SendEmailWithContext(context.Background(), msg))
+
+	assert.Equal(t, []string{"valid@example.com"}, captured.Cc)
+	assert.Empty(t, captured.Bcc)
 }
 
 func TestSendEmailRetryable(t *testing.T) {

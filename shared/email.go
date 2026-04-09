@@ -56,6 +56,7 @@ func NewEmailMessage(from string, to []string, subject string, body string) *Ema
 		From:              from,
 		To:                to,
 		Subject:           subject,
+		Headers:           map[string]string{},
 		maxAttachmentSize: DefaultMaxAttachmentSize,
 	}
 
@@ -80,6 +81,7 @@ func NewFullEmailMessage(from string, to []string, subject string, cc []string, 
 		Text:              textBody,
 		HTML:              htmlBody,
 		Attachments:       attachments,
+		Headers:           map[string]string{},
 		maxAttachmentSize: DefaultMaxAttachmentSize,
 	}
 }

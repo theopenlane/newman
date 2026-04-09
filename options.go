@@ -1,5 +1,7 @@
 package newman
 
+import "maps"
+
 // MessageOption is a function that sets a field on an EmailMessage
 type MessageOption func(*EmailMessage)
 
@@ -104,8 +106,6 @@ func WithHeaders(headers map[string]string) MessageOption {
 // WithHeaderMap adds a map of headers to the email
 func WithHeaderMap(headers map[string]string) MessageOption {
 	return func(m *EmailMessage) {
-		for key, value := range headers {
-			m.Headers[key] = value
-		}
+		maps.Copy(m.Headers, headers)
 	}
 }

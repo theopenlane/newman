@@ -17,8 +17,9 @@ import (
 
 // resendEmailSender represents a type that is responsible for sending email messages using the Resend service
 type resendEmailSender struct {
-	client  *resend.Client
-	testDir string
+	client             *resend.Client
+	testDir            string
+	defaultAttachments []*resend.Attachment
 }
 
 // Option is a type representing a function that modifies a ResendEmailSender
@@ -78,16 +79,10 @@ func WithUserAgent(userAgent string) Option {
 
 // WithFilePath is an option that allows to set a custom file path for the Resend client
 func WithFilepath(filepath string) Option {
-	return func(_ *resendEmailSender) {
-		func() *resend.SendEmailRequest {
-			return &resend.SendEmailRequest{
-				Attachments: []*resend.Attachment{
-					{
-						Path: filepath,
-					},
-				},
-			}
-		}()
+	return func(s *resendEmailSender) {
+		s.defaultAttachments = append(s.defaultAttachments, &resend.Attachment{
+			Path: filepath,
+		})
 	}
 }
 
@@ -98,16 +93,6 @@ func WithAPIKey(apiKey string) Option {
 	}
 }
 
-// WithHeaders is an option that allows to set a custom headers for the Resend client
-func WithHeaders(headers map[string]string) Option {
-	return func(_ *resendEmailSender) {
-		func() *resend.SendEmailRequest {
-			return &resend.SendEmailRequest{
-				Headers: maps.Clone(headers),
-			}
-		}()
-	}
-}
 
 // SendEmail satisfies the EmailSender interface
 func (s *resendEmailSender) SendEmail(message *newman.EmailMessage) error {
@@ -121,14 +106,14 @@ func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *n
 	}
 
 	msgToSend := resend.SendEmailRequest{
-		From:        message.From,
-		To:          slices.Clone(message.To),
-		Subject:     message.Subject,
-		Bcc:         slices.Clone(message.Bcc),
-		Cc:          slices.Clone(message.Cc),
-		ReplyTo:     message.ReplyTo,
-		Html:        message.HTML,
-		Text:        message.Text,
+		From:        message.GetFrom(),
+		To:          message.GetTo(),
+		Subject:     message.GetSubject(),
+		Bcc:         message.GetBCC(),
+		Cc:          message.GetCC(),
+		ReplyTo:     message.GetReplyTo(),
+		Html:        message.GetHTML(),
+		Text:        message.GetText(),
 		Tags:        make([]resend.Tag, 0, len(message.Tags)),
 		Attachments: make([]*resend.Attachment, 0, len(message.Attachments)),
 		Headers:     maps.Clone(message.Headers),
@@ -144,6 +129,8 @@ func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *n
 
 		msgToSend.Attachments = append(msgToSend.Attachments, resendAttachment)
 	}
+
+	msgToSend.Attachments = append(msgToSend.Attachments, slices.Clone(s.defaultAttachments)...)
 
 	for _, tag := range message.Tags {
 		resendTag := resend.Tag{

@@ -45,12 +45,12 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
       - name: Run GoReleaser
         id: run-goreleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7
         with:
           distribution: goreleaser
           version: latest
@@ -95,7 +95,7 @@ jobs:
     permissions: read-all
     steps:
       - name: Install the SLSA verifier
-        uses: slsa-framework/slsa-verifier/actions/installer@v2.7.0
+        uses: slsa-framework/slsa-verifier/actions/installer@ea584f4502babc6f60d9bc799dbbb13c1caa9ee6 # v2.7.1
       - name: Download assets
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
