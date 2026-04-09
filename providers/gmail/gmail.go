@@ -68,7 +68,7 @@ func addBCCRecipients(message []byte, bccs []string) []byte {
 
 	var msg bytes.Buffer
 
-	msg.WriteString(fmt.Sprintf("Bcc: %s\r\n", strings.Join(bccs, ",")))
+	fmt.Fprintf(&msg, "Bcc: %s\r\n", strings.Join(bccs, ","))
 
 	message = append(msg.Bytes(), message...)
 
@@ -114,7 +114,7 @@ func NewWithServiceAccount(ctx context.Context, jsonCredentials []byte, user str
 		Subject: user,
 	}
 
-	creds, err := google.CredentialsFromJSONWithParams(ctx, jsonCredentials, params)
+	creds, err := google.CredentialsFromJSONWithTypeAndParams(ctx, jsonCredentials, google.ServiceAccount, params)
 	if err != nil {
 		return nil, ErrUnableToParseServiceAccount
 	}

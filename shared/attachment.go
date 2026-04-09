@@ -61,7 +61,7 @@ func (a *Attachment) GetFilename() string {
 		return "nil_attachment"
 	}
 
-	return scrubber.DefaultTextScrubber().Scrub(a.Filename)
+	return scrubber.DefaultTextScrubber().Scrub(strings.TrimSpace(a.Filename))
 }
 
 // GetBase64StringContent returns the content of the attachment as a base64-encoded string
