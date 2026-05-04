@@ -100,6 +100,7 @@ func Link(href, text string) template.HTML {
 
 // LinkWithColor renders an anchor tag with HTML-escaped href, text, and a custom inline color
 func LinkWithColor(href, text, color string) template.HTML {
+	//nolint:gosec // all inputs are HTML-escaped
 	return template.HTML(`<a href="` + template.HTMLEscapeString(href) +
 		`" style="color:` + template.HTMLEscapeString(color) + `;text-decoration-line:none" target="_blank">` +
 		template.HTMLEscapeString(text) + `</a>`)
@@ -110,7 +111,7 @@ func LinkWithColor(href, text, color string) template.HTML {
 func templateBase() *template.Template {
 	return template.New("").Funcs(sprig.FuncMap()).Funcs(template.FuncMap{
 		"url": func(s string) template.URL {
-			return template.URL(s)
+			return template.URL(s) //nolint:gosec // template helper for trusted URL values
 		},
 		"css": func(in any) template.CSS {
 			s, ok := in.(string)
@@ -118,7 +119,7 @@ func templateBase() *template.Template {
 				return ""
 			}
 
-			return template.CSS(s)
+			return template.CSS(s) //nolint:gosec // template helper for trusted CSS values
 		},
 		"safe": func(s string) template.HTML {
 			return template.HTML(s)
