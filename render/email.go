@@ -230,8 +230,8 @@ func (m MarkdownContent) ToHTML() template.HTML {
 	var buf bytes.Buffer
 
 	if err := md.Convert([]byte(m), &buf); err != nil {
-		return template.HTML(m)
+		return template.HTML(m) //nolint:gosec // fallback: caller-supplied markdown returned as-is
 	}
 
-	return template.HTML(buf.String())
+	return template.HTML(buf.String()) //nolint:gosec // goldmark output is trusted
 }

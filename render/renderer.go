@@ -90,7 +90,7 @@ func (r *Renderer) GeneratePlainText(content EmailContent) (string, error) {
 
 // Bold wraps text in a <strong> tag with HTML-escaped content
 func Bold(s string) template.HTML {
-	return template.HTML("<strong>" + template.HTMLEscapeString(s) + "</strong>")
+	return template.HTML("<strong>" + template.HTMLEscapeString(s) + "</strong>") //nolint:gosec // input is HTML-escaped
 }
 
 // Link renders an anchor tag with HTML-escaped href and text using the default link color
@@ -123,8 +123,8 @@ func templateBase() *template.Template {
 		"safe": func(s string) template.HTML {
 			return template.HTML(s)
 		},
-		"bold": func(s string) template.HTML { return Bold(s) },
-		"link": func(href, text string) template.HTML { return Link(href, text) },
+		"bold": Bold,
+		"link": Link,
 	})
 }
 
