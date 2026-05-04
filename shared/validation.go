@@ -8,6 +8,7 @@ import (
 // regex for validating email addresses
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9._\-]+\.[a-zA-Z]{2,}$`)
 
+// ValidateEmailMessage checks that the required fields of an EmailMessage are present and valid
 func ValidateEmailMessage(msg *EmailMessage) error {
 	from := ValidateEmailAddress(msg.From)
 	if from == "" {

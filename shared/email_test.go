@@ -6,8 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/theopenlane/newman/scrubber"
 )
 
 func TestEmailMessageGetters(t *testing.T) {
@@ -544,120 +542,6 @@ func TestBuildMimeMessage(t *testing.T) {
 	}
 }
 
-func TestEmailMessageDefaultScrubbersEdgeCases(t *testing.T) {
-	email := &EmailMessage{}
-
-	t.Run("SetSubject with default scrubber", func(t *testing.T) {
-		subjectInjected := `<Subject> & "attack"`
-		expected := `&lt;Subject&gt; &amp; &#34;attack&#34;`
-
-		email.SetSubject(subjectInjected)
-
-		assert.Equal(t, subjectInjected, email.Subject)
-
-		result := email.GetSubject()
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("SetText with default scrubber", func(t *testing.T) {
-		testInjected := `Hello <world> & "everyone"`
-
-		expected := `Hello &lt;world&gt; &amp; &#34;everyone&#34;`
-
-		email.SetText(testInjected)
-		assert.Equal(t, testInjected, email.Text)
-
-		result := email.GetText()
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("SetHTML with default scrubber", func(t *testing.T) {
-		htmlInjected := `<div><a href="javascript:alert('XSS1')" onmouseover="alert('XSS2')">XSS<a></div>`
-
-		expected := `<div>XSS</div>`
-
-		email.SetHTML(htmlInjected)
-		assert.Equal(t, htmlInjected, email.HTML)
-
-		result := email.GetHTML()
-		assert.Equal(t, expected, result)
-	})
-}
-
-func TestEmailMessageCustomScrubbers(t *testing.T) {
-	message := &EmailMessage{
-		Subject: `<Subject> & "attack"`,
-		Text:    `Hello <world> & "everyone"`,
-		HTML:    `<div><a href="javascript:alert('XSS1')" onmouseover="alert('XSS2')">XSS<a></div>`,
-	}
-
-	customScrubber := scrubber.NonScrubber()
-
-	t.Run("SetCustomTextScrubber", func(t *testing.T) {
-		message.SetCustomTextScrubber(customScrubber)
-
-		expected := `<Subject> & "attack"`
-		result := message.GetSubject()
-		assert.Equal(t, expected, result)
-
-		expected = `Hello <world> & "everyone"`
-
-		result = message.GetText()
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("SetCustomHTMLScrubber", func(t *testing.T) {
-		message.SetCustomHTMLScrubber(customScrubber)
-
-		expected := `<div><a href="javascript:alert('XSS1')" onmouseover="alert('XSS2')">XSS<a></div>`
-		result := message.GetHTML()
-		assert.Equal(t, expected, result)
-	})
-}
-
-func TestEmailMessageSettersAndScrubbersEdgeCases(t *testing.T) {
-	email := &EmailMessage{}
-
-	t.Run("SetSubject with custom scrubber", func(t *testing.T) {
-		customScrubber := scrubber.NonScrubber()
-		email.SetCustomTextScrubber(customScrubber)
-
-		expected := `<Subject> & "attack"`
-		email.SetSubject(expected)
-		assert.Equal(t, expected, email.Subject)
-
-		result := email.GetSubject()
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("SetText with custom scrubber", func(t *testing.T) {
-		customScrubber := scrubber.NonScrubber()
-
-		email.SetCustomTextScrubber(customScrubber)
-
-		expected := `Hello <world> & "everyone"`
-		email.SetText(expected)
-		assert.Equal(t, expected, email.Text)
-
-		result := email.GetText()
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("SetHTML with custom scrubber", func(t *testing.T) {
-		customScrubber := scrubber.NonScrubber()
-
-		email.SetCustomHTMLScrubber(customScrubber)
-
-		expected := `<div><a href="javascript:alert('XSS1')" onmouseover="alert('XSS2')">XSS<a></div>`
-		email.SetHTML(expected)
-
-		assert.Equal(t, expected, email.HTML)
-
-		result := email.GetHTML()
-		assert.Equal(t, expected, result)
-	})
-}
-
 func TestGetAttachmentsWithEdgeCases(t *testing.T) {
 	t.Run("GetAttachments with mixed size attachments", func(t *testing.T) {
 		email := &EmailMessage{
@@ -691,47 +575,3 @@ func TestGetAttachmentsWithEdgeCases(t *testing.T) {
 	})
 }
 
-func TestBuildMimeMessageWithScrubbers(t *testing.T) {
-	tests := []struct {
-		message  *EmailMessage
-		contains []string
-	}{
-		{
-			NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps"),
-			[]string{"From: newman@usps.com", "To: jerry@seinfeld.com", "Subject: Test Email", "The air is so dewy sweet you dont even have to lick the stamps"},
-		},
-		{
-			NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "<p>The air is so dewy sweet you dont even have to lick the stamps</p>"),
-			[]string{"From: newman@usps.com", "To: jerry@seinfeld.com", "Subject: Test Email", "Content-Type: text/html", "<p>The air is so dewy sweet you dont even have to lick the stamps</p>"},
-		},
-		{
-			NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps").
-				SetCC([]string{"cc@example.com"}).
-				SetBCC([]string{"bcc@example.com"}).
-				SetAttachments([]*Attachment{NewAttachment("test.txt", []byte("When you control the mail, you control… INFORMATION!"))}),
-			[]string{"From: newman@usps.com", "To: jerry@seinfeld.com", "Cc: cc@example.com", "Subject: Test Email", "The air is so dewy sweet you dont even have to lick the stamps", "Content-Disposition: attachment; filename=\"test.txt\"", base64.StdEncoding.EncodeToString([]byte("When you control the mail, you control… INFORMATION!"))},
-		},
-		{
-			NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "Test Email", "The air is so dewy sweet you dont even have to lick the stamps").
-				SetCC([]string{"cc@example.com"}).
-				SetBCC([]string{"bcc@example.com"}).
-				SetReplyTo("reply-to@example.com"),
-			[]string{"From: newman@usps.com", "To: jerry@seinfeld.com", "Cc: cc@example.com", "Subject: Test Email", "The air is so dewy sweet you dont even have to lick the stamps", "Reply-To: reply-to@example.com"},
-		},
-		{
-			NewEmailMessage("newman@usps.com", []string{"jerry@seinfeld.com"}, "<script>alert('xss')</script>", "The air is so dewy sweet you dont even have to lick the stamps"),
-			[]string{"Subject: &lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.message.GetSubject(), func(t *testing.T) {
-			result, err := BuildMimeMessage(test.message)
-			require.NoError(t, err)
-
-			for _, substring := range test.contains {
-				assert.Contains(t, string(result), substring)
-			}
-		})
-	}
-}

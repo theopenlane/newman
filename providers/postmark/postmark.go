@@ -9,6 +9,7 @@ import (
 	"github.com/theopenlane/httpsling/httpclient"
 
 	"github.com/theopenlane/newman"
+	"github.com/theopenlane/newman/scrubber"
 )
 
 const (
@@ -20,9 +21,21 @@ const (
 
 // postmarkEmailSender defines a struct for sending emails using the Postmark API
 type postmarkEmailSender struct {
-	serverToken string
-	endpoint    string
-	url         string
+	serverToken  string
+	endpoint     string
+	url          string
+	htmlScrubber scrubber.Scrubber
+}
+
+// Option configures a postmarkEmailSender
+type Option func(*postmarkEmailSender)
+
+// WithHTMLScrubber sets a scrubber applied to HTML content before sending.
+// When set, every outbound message has its HTML sanitized by this scrubber
+func WithHTMLScrubber(s scrubber.Scrubber) Option {
+	return func(pm *postmarkEmailSender) {
+		pm.htmlScrubber = s
+	}
 }
 
 // email represents an email for Postmark
@@ -46,12 +59,18 @@ type attachment struct {
 }
 
 // New creates a new instance of postmarkEmailSender
-func New(serverToken string) (newman.EmailSender, error) {
-	return &postmarkEmailSender{
+func New(serverToken string, opts ...Option) (newman.EmailSender, error) {
+	pm := &postmarkEmailSender{
 		serverToken: serverToken,
 		endpoint:    endpoint,
 		url:         requestURL,
-	}, nil
+	}
+
+	for _, opt := range opts {
+		opt(pm)
+	}
+
+	return pm, nil
 }
 
 // SendEmail satisfies the EmailSender interface
@@ -59,15 +78,30 @@ func (s *postmarkEmailSender) SendEmail(message *newman.EmailMessage) error {
 	return s.SendEmailWithContext(context.Background(), message)
 }
 
+// SendBatchEmail satisfies the EmailSender interface
+func (s *postmarkEmailSender) SendBatchEmail(_ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
+// SendBatchEmailWithContext satisfies the EmailSender interface
+func (s *postmarkEmailSender) SendBatchEmailWithContext(_ context.Context, _ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
 // SendEmailWithContext satisfies the EmailSender interface
 func (s *postmarkEmailSender) SendEmailWithContext(_ context.Context, message *newman.EmailMessage) error {
+	htmlContent := message.GetHTML()
+	if s.htmlScrubber != nil {
+		htmlContent = s.htmlScrubber.Scrub(htmlContent)
+	}
+
 	emailStruct := email{
 		From:     message.GetFrom(),
 		To:       strings.Join(message.GetTo(), ","),
 		CC:       strings.Join(message.GetCC(), ","),
 		Subject:  message.GetSubject(),
 		TextBody: message.GetText(),
-		HTMLBody: message.GetHTML(),
+		HTMLBody: htmlContent,
 		ReplyTo:  message.GetReplyTo(),
 		Bcc:      strings.Join(message.GetBCC(), ","),
 	}

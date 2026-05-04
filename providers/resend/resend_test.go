@@ -285,6 +285,140 @@ func TestSendEmailWithContext_InvalidAddressesFiltered(t *testing.T) {
 	assert.Empty(t, captured.Bcc)
 }
 
+func testBatchServerSuccess(t *testing.T) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+
+		_, err := w.Write([]byte(`{"data": [{"id": "sent-1"}, {"id": "sent-2"}]}`))
+		require.NoError(t, err)
+	}))
+}
+
+func TestSendBatchEmail(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	ts := testBatchServerSuccess(t)
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	mc.BaseURL = baseURL
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	messages := []*newman.EmailMessage{
+		newman.NewEmailMessageWithOptions(
+			newman.WithFrom("newman@usps.com"),
+			newman.WithTo([]string{"jerry@seinfeld.com"}),
+			newman.WithSubject("Batch 1"),
+			newman.WithText("Hello, Jerry"),
+		),
+		newman.NewEmailMessageWithOptions(
+			newman.WithFrom("newman@usps.com"),
+			newman.WithTo([]string{"george@seinfeld.com"}),
+			newman.WithSubject("Batch 2"),
+			newman.WithHTML("<p>Hello, George</p>"),
+		),
+	}
+
+	err = emailSender.SendBatchEmailWithContext(context.Background(), messages)
+	assert.NoError(t, err)
+
+	err = emailSender.SendBatchEmail(messages)
+	assert.NoError(t, err)
+}
+
+func TestSendBatchEmailEmpty(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	mc, ts := mockClient(t, apiKey, true)
+	defer ts.Close()
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	err = emailSender.SendBatchEmailWithContext(context.Background(), []*newman.EmailMessage{})
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrEmptyBatch)
+}
+
+func TestSendBatchEmailValidationError(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	mc, ts := mockClient(t, apiKey, true)
+	defer ts.Close()
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	messages := []*newman.EmailMessage{
+		newman.NewEmailMessageWithOptions(
+			newman.WithFrom("newman@usps.com"),
+			newman.WithTo([]string{"invalid"}),
+			newman.WithSubject("Bad Email"),
+		),
+	}
+
+	err = emailSender.SendBatchEmailWithContext(context.Background(), messages)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "to is required")
+}
+
+func TestSendBatchEmailError(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	mc, ts := mockClient(t, apiKey, false)
+	defer ts.Close()
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	messages := []*newman.EmailMessage{
+		newman.NewEmailMessageWithOptions(
+			newman.WithFrom("newman@usps.com"),
+			newman.WithTo([]string{"jerry@seinfeld.com"}),
+			newman.WithSubject("Batch Fail"),
+			newman.WithText("This should fail"),
+		),
+	}
+
+	err = emailSender.SendBatchEmailWithContext(context.Background(), messages)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrFailedToSendBatchEmail)
+}
+
+func TestSendBatchEmailRetryable(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	ts := testServerTooManyRequests(t)
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	mc.BaseURL = baseURL
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	messages := []*newman.EmailMessage{
+		newman.NewEmailMessageWithOptions(
+			newman.WithFrom("newman@usps.com"),
+			newman.WithTo([]string{"jerry@seinfeld.com"}),
+			newman.WithSubject("Rate Limited"),
+			newman.WithText("Too many requests"),
+		),
+	}
+
+	err = emailSender.SendBatchEmailWithContext(context.Background(), messages)
+	assert.Error(t, err)
+	assert.True(t, newman.IsRetryableError(err))
+}
+
 func TestSendEmailRetryable(t *testing.T) {
 	apiKey := "re_send_api_key" // #nosec G101
 

@@ -8,23 +8,52 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"github.com/theopenlane/newman"
+	"github.com/theopenlane/newman/scrubber"
 )
 
 // sendGridEmailSender defines a struct for sending emails using the SendGrid API
 type sendGridEmailSender struct {
-	client *sendgrid.Client
+	client       *sendgrid.Client
+	htmlScrubber scrubber.Scrubber
+}
+
+// Option configures a sendGridEmailSender
+type Option func(*sendGridEmailSender)
+
+// WithHTMLScrubber sets a scrubber applied to HTML content before sending.
+// When set, every outbound message has its HTML sanitized by this scrubber
+func WithHTMLScrubber(s scrubber.Scrubber) Option {
+	return func(sg *sendGridEmailSender) {
+		sg.htmlScrubber = s
+	}
 }
 
 // New creates a new instance of sendGridEmailSender
-func New(apiKey string) (newman.EmailSender, error) {
-	return &sendGridEmailSender{
+func New(apiKey string, opts ...Option) (newman.EmailSender, error) {
+	sg := &sendGridEmailSender{
 		client: sendgrid.NewSendClient(apiKey),
-	}, nil
+	}
+
+	for _, opt := range opts {
+		opt(sg)
+	}
+
+	return sg, nil
 }
 
 // SendEmail satisfies the EmailSender interface
 func (s *sendGridEmailSender) SendEmail(message *newman.EmailMessage) error {
 	return s.SendEmailWithContext(context.Background(), message)
+}
+
+// SendBatchEmail satisfies the EmailSender interface
+func (s *sendGridEmailSender) SendBatchEmail(_ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
+// SendBatchEmailWithContext satisfies the EmailSender interface
+func (s *sendGridEmailSender) SendBatchEmailWithContext(_ context.Context, _ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
 }
 
 // SendEmailWithContext satisfies the EmailSender interface
@@ -65,8 +94,13 @@ func (s *sendGridEmailSender) SendEmailWithContext(ctx context.Context, message 
 	}
 
 	// Add HTML content
-	if message.GetHTML() != "" {
-		v3Mail.AddContent(mail.NewContent("text/html", message.GetHTML()))
+	htmlContent := message.GetHTML()
+	if s.htmlScrubber != nil {
+		htmlContent = s.htmlScrubber.Scrub(htmlContent)
+	}
+
+	if htmlContent != "" {
+		v3Mail.AddContent(mail.NewContent("text/html", htmlContent))
 	}
 
 	// Add attachments
