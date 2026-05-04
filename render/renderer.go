@@ -122,7 +122,7 @@ func templateBase() *template.Template {
 			return template.CSS(s) //nolint:gosec // template helper for trusted CSS values
 		},
 		"safe": func(s string) template.HTML {
-			return template.HTML(s)
+			return template.HTML(s) //nolint:gosec // intentional: "safe" marks caller-trusted HTML
 		},
 		"bold": Bold,
 		"link": Link,
