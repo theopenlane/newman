@@ -26,6 +26,16 @@ func (s *gmailEmailSender) SendEmail(message *newman.EmailMessage) error {
 	return s.SendEmailWithContext(context.Background(), message)
 }
 
+// SendBatchEmail satisfies the EmailSender interface
+func (s *gmailEmailSender) SendBatchEmail(_ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
+// SendBatchEmailWithContext satisfies the EmailSender interface
+func (s *gmailEmailSender) SendBatchEmailWithContext(_ context.Context, _ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
 // SendEmailWithContext satisfies the EmailSender interface
 func (s *gmailEmailSender) SendEmailWithContext(_ context.Context, message *newman.EmailMessage) error {
 	mimeMessage, err := newman.BuildMimeMessage(message)

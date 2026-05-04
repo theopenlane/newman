@@ -12,6 +12,10 @@ type EmailSender interface {
 	SendEmail(message *EmailMessage) error
 	// SendEmailWithContext sends an email with the given message and context
 	SendEmailWithContext(ctx context.Context, message *EmailMessage) error
+	// SendBatchEmail sends a batch of emails with the given messages
+	SendBatchEmail(messages []*EmailMessage) error
+	// SendBatchEmailWithContext sends a batch of emails with the given messages and context
+	SendBatchEmailWithContext(ctx context.Context, messages []*EmailMessage) error
 }
 
 // EmailMessage represents an email message

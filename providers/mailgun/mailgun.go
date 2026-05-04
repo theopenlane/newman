@@ -45,6 +45,16 @@ func (s *mailgunEmailSender) SendEmail(message *newman.EmailMessage) error {
 	return s.SendEmailWithContext(context.Background(), message)
 }
 
+// SendBatchEmail satisfies the EmailSender interface
+func (s *mailgunEmailSender) SendBatchEmail(_ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
+// SendBatchEmailWithContext satisfies the EmailSender interface
+func (s *mailgunEmailSender) SendBatchEmailWithContext(_ context.Context, _ []*newman.EmailMessage) error {
+	return newman.ErrBatchNotImplemented
+}
+
 // SendEmailWithContext satisfies the EmailSender interface
 func (s *mailgunEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
 	mailMessage := mailgun.NewMessage(message.From, message.Subject, message.Text, message.To...)

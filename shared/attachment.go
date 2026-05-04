@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
-
-	"github.com/theopenlane/newman/scrubber"
 )
 
 // Attachment represents an email attachment with its filename and content
@@ -55,13 +53,13 @@ func (a *Attachment) SetFilename(filename string) {
 	a.Filename = filename
 }
 
-// GetFilename safely returns the filename of the attachment
+// GetFilename returns the trimmed filename of the attachment
 func (a *Attachment) GetFilename() string {
 	if a == nil {
-		return "nil_attachment"
+		return ""
 	}
 
-	return scrubber.DefaultTextScrubber().Scrub(strings.TrimSpace(a.Filename))
+	return strings.TrimSpace(a.Filename)
 }
 
 // GetBase64StringContent returns the content of the attachment as a base64-encoded string

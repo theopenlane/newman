@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/theopenlane/newman/scrubber"
 )
 
 const DefaultMaxAttachmentSize = 25 * 1024 * 1024 // 25 MB
@@ -38,10 +36,6 @@ type EmailMessage struct {
 	Headers map[string]string `json:"headers,omitempty"`
 	// Maximum size for attachments
 	maxAttachmentSize int
-	// textScrubber is used to scrub text content
-	textScrubber scrubber.Scrubber
-	// htmlScrubber is used to scrub HTML content
-	htmlScrubber scrubber.Scrubber
 }
 
 // Tag is used to define custom metadata for message
@@ -209,43 +203,31 @@ func (e *EmailMessage) GetReplyTo() string {
 	return ValidateEmailAddress(e.ReplyTo)
 }
 
-// GetSubject returns the scrubd email subject
+// GetSubject returns the email subject
 func (e *EmailMessage) GetSubject() string {
 	if e == nil {
 		return ""
 	}
 
-	if e.textScrubber != nil {
-		return e.textScrubber.Scrub(e.Subject)
-	}
-
-	return scrubber.DefaultTextScrubber().Scrub(e.Subject)
+	return e.Subject
 }
 
-// GetText returns the scrubd plain text content of the email
+// GetText returns the plain text content of the email
 func (e *EmailMessage) GetText() string {
 	if e == nil {
 		return ""
 	}
 
-	if e.textScrubber != nil {
-		return e.textScrubber.Scrub(e.Text)
-	}
-
-	return scrubber.DefaultTextScrubber().Scrub(e.Text)
+	return e.Text
 }
 
-// GetHTML returns the scrubd HTML content of the email
+// GetHTML returns the HTML content of the email
 func (e *EmailMessage) GetHTML() string {
 	if e == nil {
 		return ""
 	}
 
-	if e.htmlScrubber != nil {
-		return e.htmlScrubber.Scrub(e.HTML)
-	}
-
-	return scrubber.DefaultHTMLScrubber().Scrub(e.HTML)
+	return e.HTML
 }
 
 // SetMaxAttachmentSize sets the maximum attachment size
@@ -273,20 +255,6 @@ func (e *EmailMessage) GetAttachments() []*Attachment {
 	}
 
 	return validAttachments
-}
-
-// SetCustomTextScrubber sets a custom scrubber for text content
-func (e *EmailMessage) SetCustomTextScrubber(s scrubber.Scrubber) *EmailMessage {
-	e.textScrubber = s
-
-	return e
-}
-
-// SetCustomHTMLScrubber sets a custom scrubber for HTML content
-func (e *EmailMessage) SetCustomHTMLScrubber(s scrubber.Scrubber) *EmailMessage {
-	e.htmlScrubber = s
-
-	return e
 }
 
 // jsonEmailMessage represents the JSON structure for an email message.
@@ -348,46 +316,46 @@ func BuildMimeMessage(message *EmailMessage) ([]byte, error) {
 	altBoundary := fmt.Sprintf("alt-boundary-%d", time.Now().UnixNano())
 
 	// Basic headers
-	msg.WriteString(fmt.Sprintf("From: %s\r\n", message.GetFrom()))
+	fmt.Fprintf(&msg, "From: %s\r\n", message.GetFrom())
 
 	// Add To recipients
 	toRecipients := message.GetTo()
 	if len(toRecipients) > 0 {
-		msg.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(toRecipients, ",")))
+		fmt.Fprintf(&msg, "To: %s\r\n", strings.Join(toRecipients, ","))
 	}
 
 	ccRecipients := message.GetCC()
 
 	if len(ccRecipients) > 0 {
-		msg.WriteString(fmt.Sprintf("Cc: %s\r\n", strings.Join(ccRecipients, ",")))
+		fmt.Fprintf(&msg, "Cc: %s\r\n", strings.Join(ccRecipients, ","))
 	}
 
 	if message.GetReplyTo() != "" {
-		msg.WriteString(fmt.Sprintf("Reply-To: %s\r\n", message.GetReplyTo()))
+		fmt.Fprintf(&msg, "Reply-To: %s\r\n", message.GetReplyTo())
 	}
 
-	msg.WriteString(fmt.Sprintf("Subject: %s\r\n", message.GetSubject()))
+	fmt.Fprintf(&msg, "Subject: %s\r\n", message.GetSubject())
 
 	msg.WriteString("MIME-Version: 1.0\r\n")
 
 	// Use multipart/mixed if there are attachments, otherwise multipart/alternative
 	attachments := message.GetAttachments()
 	if len(attachments) > 0 {
-		msg.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\r\n", mixedBoundary))
+		fmt.Fprintf(&msg, "Content-Type: multipart/mixed; boundary=%s\r\n", mixedBoundary)
 		msg.WriteString("\r\n")
 		// Start multipart/alternative
-		msg.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
-		msg.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=%s\r\n", altBoundary))
+		fmt.Fprintf(&msg, "--%s\r\n", mixedBoundary)
+		fmt.Fprintf(&msg, "Content-Type: multipart/alternative; boundary=%s\r\n", altBoundary)
 		msg.WriteString("\r\n")
 	} else {
-		msg.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=%s\r\n", altBoundary))
+		fmt.Fprintf(&msg, "Content-Type: multipart/alternative; boundary=%s\r\n", altBoundary)
 		msg.WriteString("\r\n")
 	}
 
 	// Plain text part
 	textMessage := message.GetText()
 	if textMessage != "" {
-		msg.WriteString(fmt.Sprintf("--%s\r\n", altBoundary))
+		fmt.Fprintf(&msg, "--%s\r\n", altBoundary)
 		msg.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
 		msg.WriteString("\r\n")
 		msg.WriteString(textMessage)
@@ -397,7 +365,7 @@ func BuildMimeMessage(message *EmailMessage) ([]byte, error) {
 	// HTML part
 	htmlMessage := message.GetHTML()
 	if htmlMessage != "" {
-		msg.WriteString(fmt.Sprintf("--%s\r\n", altBoundary))
+		fmt.Fprintf(&msg, "--%s\r\n", altBoundary)
 		msg.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
 		msg.WriteString("\r\n")
 		msg.WriteString(htmlMessage)
@@ -405,7 +373,7 @@ func BuildMimeMessage(message *EmailMessage) ([]byte, error) {
 	}
 
 	// End multipart/alternative
-	msg.WriteString(fmt.Sprintf("--%s--\r\n", altBoundary))
+	fmt.Fprintf(&msg, "--%s--\r\n", altBoundary)
 
 	// Attachments
 	if len(attachments) > 0 {
@@ -414,17 +382,17 @@ func BuildMimeMessage(message *EmailMessage) ([]byte, error) {
 
 			mimeType := GetMimeType(fileName)
 
-			msg.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
-			msg.WriteString(fmt.Sprintf("Content-Type: %s\r\n", mimeType))
+			fmt.Fprintf(&msg, "--%s\r\n", mixedBoundary)
+			fmt.Fprintf(&msg, "Content-Type: %s\r\n", mimeType)
 			msg.WriteString("Content-Transfer-Encoding: base64\r\n")
-			msg.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", fileName))
+			fmt.Fprintf(&msg, "Content-Disposition: attachment; filename=\"%s\"\r\n", fileName)
 			msg.WriteString("\r\n")
 			msg.Write(attachment.GetBase64Content())
 			msg.WriteString("\r\n")
 		}
 
 		// End multipart/mixed
-		msg.WriteString(fmt.Sprintf("--%s--\r\n", mixedBoundary))
+		fmt.Fprintf(&msg, "--%s--\r\n", mixedBoundary)
 	}
 
 	return msg.Bytes(), nil

@@ -12,6 +12,7 @@ import (
 
 	"github.com/theopenlane/newman"
 	"github.com/theopenlane/newman/providers/mock"
+	"github.com/theopenlane/newman/scrubber"
 	"github.com/theopenlane/newman/shared"
 )
 
@@ -20,6 +21,7 @@ type resendEmailSender struct {
 	client             *resend.Client
 	testDir            string
 	defaultAttachments []*resend.Attachment
+	htmlScrubber       scrubber.Scrubber
 }
 
 // Option is a type representing a function that modifies a ResendEmailSender
@@ -57,6 +59,7 @@ func WithClient(client *resend.Client) Option {
 	}
 }
 
+// WithDevMode routes sends to the mock provider, writing MIME files to the given path
 func WithDevMode(path string) Option {
 	return func(s *resendEmailSender) {
 		s.testDir = path
@@ -93,65 +96,123 @@ func WithAPIKey(apiKey string) Option {
 	}
 }
 
+// WithHTMLScrubber sets a scrubber applied to HTML content before sending.
+// When set, every outbound message has its HTML sanitized by this scrubber
+func WithHTMLScrubber(s scrubber.Scrubber) Option {
+	return func(r *resendEmailSender) {
+		r.htmlScrubber = s
+	}
+}
 
 // SendEmail satisfies the EmailSender interface
 func (s *resendEmailSender) SendEmail(message *newman.EmailMessage) error {
 	return s.SendEmailWithContext(context.Background(), message)
 }
 
+// SendBatchEmail satisfies the EmailSender interface
+func (s *resendEmailSender) SendBatchEmail(messages []*newman.EmailMessage) error {
+	return s.SendBatchEmailWithContext(context.Background(), messages)
+}
+
+// toSendEmailRequest converts a newman EmailMessage to a resend SendEmailRequest.
+// Resend's batch API does not support attachments, so withAttachments controls
+// whether attachment fields are populated on the request
+func (s *resendEmailSender) toSendEmailRequest(message *newman.EmailMessage, withAttachments bool) (*resend.SendEmailRequest, error) {
+	if err := shared.ValidateEmailMessage(message); err != nil {
+		return nil, err
+	}
+
+	htmlContent := message.GetHTML()
+	if s.htmlScrubber != nil {
+		htmlContent = s.htmlScrubber.Scrub(htmlContent)
+	}
+
+	req := &resend.SendEmailRequest{
+		From:    message.GetFrom(),
+		To:      message.GetTo(),
+		Subject: message.GetSubject(),
+		Bcc:     message.GetBCC(),
+		Cc:      message.GetCC(),
+		ReplyTo: message.GetReplyTo(),
+		Html:    htmlContent,
+		Text:    message.GetText(),
+		Tags:    make([]resend.Tag, 0, len(message.Tags)),
+		Headers: maps.Clone(message.Headers),
+	}
+
+	if withAttachments {
+		req.Attachments = make([]*resend.Attachment, 0, len(message.Attachments))
+
+		for _, attachment := range message.Attachments {
+			req.Attachments = append(req.Attachments, &resend.Attachment{
+				Content:     attachment.Content,
+				Filename:    attachment.Filename,
+				Path:        attachment.FilePath,
+				ContentType: attachment.ContentType,
+			})
+		}
+
+		req.Attachments = append(req.Attachments, slices.Clone(s.defaultAttachments)...)
+	}
+
+	for _, tag := range message.Tags {
+		req.Tags = append(req.Tags, resend.Tag{
+			Name:  tag.Name,
+			Value: tag.Value,
+		})
+	}
+
+	return req, nil
+}
+
+// handleSendError normalizes resend API errors into sentinel or retryable errors
+func handleSendError(err error, sentinel error) error {
+	if strings.Contains(strings.ToLower(err.Error()), "too many requests") {
+		return newman.NewRetryableError(err)
+	}
+
+	if strings.Contains(err.Error(), "use our testing email address") {
+		return nil
+	}
+
+	return fmt.Errorf("%w: %w", sentinel, err)
+}
+
+// SendBatchEmailWithContext satisfies the EmailSender interface
+func (s *resendEmailSender) SendBatchEmailWithContext(ctx context.Context, messages []*newman.EmailMessage) error {
+	if len(messages) == 0 {
+		return ErrEmptyBatch
+	}
+
+	requests := make([]*resend.SendEmailRequest, 0, len(messages))
+
+	for _, message := range messages {
+		req, err := s.toSendEmailRequest(message, false)
+		if err != nil {
+			return err
+		}
+
+		requests = append(requests, req)
+	}
+
+	_, err := s.client.Batch.SendWithContext(ctx, requests)
+	if err != nil {
+		return handleSendError(err, ErrFailedToSendBatchEmail)
+	}
+
+	return nil
+}
+
 // SendEmailWithContext satisfies the EmailSender interface
 func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *newman.EmailMessage) error {
-	if err := shared.ValidateEmailMessage(message); err != nil {
+	req, err := s.toSendEmailRequest(message, true)
+	if err != nil {
 		return err
 	}
 
-	msgToSend := resend.SendEmailRequest{
-		From:        message.GetFrom(),
-		To:          message.GetTo(),
-		Subject:     message.GetSubject(),
-		Bcc:         message.GetBCC(),
-		Cc:          message.GetCC(),
-		ReplyTo:     message.GetReplyTo(),
-		Html:        message.GetHTML(),
-		Text:        message.GetText(),
-		Tags:        make([]resend.Tag, 0, len(message.Tags)),
-		Attachments: make([]*resend.Attachment, 0, len(message.Attachments)),
-		Headers:     maps.Clone(message.Headers),
-	}
-
-	for _, attachment := range message.Attachments {
-		resendAttachment := &resend.Attachment{
-			Content:     attachment.Content,
-			Filename:    attachment.Filename,
-			Path:        attachment.FilePath,
-			ContentType: attachment.ContentType,
-		}
-
-		msgToSend.Attachments = append(msgToSend.Attachments, resendAttachment)
-	}
-
-	msgToSend.Attachments = append(msgToSend.Attachments, slices.Clone(s.defaultAttachments)...)
-
-	for _, tag := range message.Tags {
-		resendTag := resend.Tag{
-			Name:  tag.Name,
-			Value: tag.Value,
-		}
-
-		msgToSend.Tags = append(msgToSend.Tags, resendTag)
-	}
-
-	_, err := s.client.Emails.SendWithContext(ctx, &msgToSend)
+	_, err = s.client.Emails.SendWithContext(ctx, req)
 	if err != nil {
-		// resend sdk does not return a specific error so check for it
-		if strings.Contains(strings.ToLower(err.Error()), "too many requests") {
-			return newman.NewRetryableError(err)
-		}
-
-		// if it is a test email, we should not return an error
-		if !strings.Contains(err.Error(), "use our testing email address") {
-			return fmt.Errorf("%w: %w", ErrFailedToSendEmail, err)
-		}
+		return handleSendError(err, ErrFailedToSendEmail)
 	}
 
 	return nil

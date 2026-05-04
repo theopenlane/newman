@@ -4,6 +4,9 @@ import (
 	"errors"
 )
 
+// ErrBatchNotImplemented is returned by providers that do not support native batch sending
+var ErrBatchNotImplemented = errors.New("batch email sending is not implemented for this provider")
+
 type retryableError struct {
 	reason error
 }

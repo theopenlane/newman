@@ -14,7 +14,7 @@ func TestAttachmentGetters(t *testing.T) {
 	t.Run("GetFilename", func(t *testing.T) {
 		attachment := Attachment{Filename: "test.txt"}
 		assert.Equal(t, "test.txt", attachment.GetFilename())
-		assert.Equal(t, "nil_attachment", (*Attachment)(nil).GetFilename())
+		assert.Equal(t, "", (*Attachment)(nil).GetFilename())
 	})
 
 	t.Run("GetBase64Content", func(t *testing.T) {
@@ -213,24 +213,16 @@ func TestSetContent(t *testing.T) {
 	})
 }
 
-func TestSanitizeFilename(t *testing.T) {
+func TestGetFilename_Trimming(t *testing.T) {
 	attachment := &Attachment{}
 
-	t.Run("sanitize Filename with HTML", func(t *testing.T) {
-		fileName := "<div>Test</div>"
-		expected := "&lt;div&gt;Test&lt;/div&gt;"
-
-		attachment.SetFilename(fileName)
-
-		assert.Equal(t, expected, attachment.GetFilename())
+	t.Run("trims leading and trailing spaces", func(t *testing.T) {
+		attachment.SetFilename("  Test  ")
+		assert.Equal(t, "Test", attachment.GetFilename())
 	})
 
-	t.Run("sanitize Filename with spaces", func(t *testing.T) {
-		fileName := "  Test  "
-		expected := "Test"
-
-		attachment.SetFilename(fileName)
-
-		assert.Equal(t, expected, attachment.GetFilename())
+	t.Run("preserves filename as-is without escaping", func(t *testing.T) {
+		attachment.SetFilename("report & summary.pdf")
+		assert.Equal(t, "report & summary.pdf", attachment.GetFilename())
 	})
 }

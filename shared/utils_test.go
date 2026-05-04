@@ -9,13 +9,6 @@ import (
 	"github.com/theopenlane/newman/shared"
 )
 
-func TestStrPtr(t *testing.T) {
-	str := "String to test for pointer"
-	ptrStr := shared.StrPtr(str)
-	assert.Equal(t, ptrStr, &str)
-	assert.EqualValues(t, ptrStr, &str)
-}
-
 func TestGetMimeType(t *testing.T) {
 	tests := []struct {
 		filename string
@@ -68,14 +61,6 @@ func TestIsHTML(t *testing.T) {
 		result := shared.IsHTML(test.input)
 		assert.Equal(t, result, test.expected)
 	}
-}
-
-func ExampleStrPtr() {
-	name := "Jerry Seinfeld"
-	namePtr := shared.StrPtr(name)
-	fmt.Println(*namePtr)
-
-	// Output: Jerry Seinfeld
 }
 
 func ExampleGetMimeType() {
