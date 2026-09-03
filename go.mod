@@ -12,7 +12,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/theopenlane/httpsling v0.3.0
 	github.com/vanng822/go-premailer v1.35.0
-	github.com/yuin/goldmark v1.8.5
+	github.com/yuin/goldmark v1.4.13
+	github.com/yuin/goldmark/v2 v2.0.1
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.292.0
 )
