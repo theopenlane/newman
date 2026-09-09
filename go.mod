@@ -11,7 +11,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/stretchr/testify v1.12.1
 	github.com/theopenlane/httpsling v0.3.0
-	github.com/vanng822/go-premailer v1.35.0
+	github.com/vanng822/go-premailer v1.36.0
 	github.com/yuin/goldmark v1.8.6
 	golang.org/x/oauth2 v0.37.0
 	google.golang.org/api v0.292.0
@@ -24,8 +24,8 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
-	github.com/PuerkitoBio/goquery v1.12.0 // indirect
-	github.com/andybalholm/cascadia v1.3.3 // indirect
+	github.com/PuerkitoBio/goquery v1.13.0 // indirect
+	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
