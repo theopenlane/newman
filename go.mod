@@ -13,7 +13,7 @@ require (
 	github.com/theopenlane/httpsling v0.3.0
 	github.com/vanng822/go-premailer v1.35.0
 	github.com/yuin/goldmark v1.8.6
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 	google.golang.org/api v0.292.0
 )
 
