@@ -7,6 +7,7 @@ require (
 	github.com/mailgun/mailgun-go/v4 v4.23.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/resend/resend-go/v3 v3.17.0
+	github.com/resend/resend-go/v4 v4.4.0
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/stretchr/testify v1.12.1
