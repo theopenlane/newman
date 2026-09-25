@@ -11,10 +11,10 @@ repos:
       - id: detect-private-key
         exclude: providers/gmail/gmail_test.go
   - repo: https://github.com/google/yamlfmt
-    rev: v0.20.0
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
   - repo: https://github.com/crate-ci/typos
-    rev: v1.40.0
+    rev: v1.50.3
     hooks:
       - id: typos

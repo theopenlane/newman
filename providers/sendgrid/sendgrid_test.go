@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
@@ -149,4 +150,39 @@ func TestSendGridEmailSender_SendEmailWithAttachments(t *testing.T) {
 	v3Mail.AddAttachment(attachment)
 
 	assert.Equal(t, v3Mail.Attachments[0].Content, message.GetAttachments()[0].GetBase64StringContent())
+}
+
+func TestSendGridEmailSender_Verify(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/v3/scopes", r.URL.Path)
+		assert.Equal(t, "Bearer test-api-key", r.Header.Get("Authorization"))
+
+		w.WriteHeader(http.StatusOK)
+
+		_, err := w.Write([]byte(`{"scopes": ["mail.send"]}`))
+		assert.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	emailSender := NewMockSendGridEmailSender("test-api-key", ts.URL+"/v3/mail/send")
+
+	err := emailSender.Verify(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestSendGridEmailSender_VerifyUnauthorized(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		_, err := w.Write([]byte(`{"errors": [{"field": null, "message": "authorization required"}]}`))
+		assert.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	emailSender := NewMockSendGridEmailSender("test-api-key", ts.URL)
+
+	err := emailSender.Verify(context.Background())
+	assert.ErrorIs(t, err, ErrVerifyFailed)
+	assert.ErrorContains(t, err, "authorization required")
 }

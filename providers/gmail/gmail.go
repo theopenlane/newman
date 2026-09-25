@@ -4,21 +4,31 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"net/http"
+	"slices"
 	"strings"
 
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	"github.com/theopenlane/newman"
 	"github.com/theopenlane/newman/credentials"
 )
 
-// gmailEmailSender wraps the Gmail UsersMessagesService
+const (
+	defaultUser = "me"
+	// insufficientPermissionsReason is the Google API error reason for a token missing a required scope
+	insufficientPermissionsReason = "insufficientPermissions"
+)
+
+// gmailEmailSender wraps the Gmail UsersService
 type gmailEmailSender struct {
-	messageSender *gmail.UsersMessagesService
-	user          string
+	users *gmail.UsersService
+	user  string
 }
 
 // SendEmail satisfies the EmailSender interface
@@ -58,16 +68,48 @@ func (s *gmailEmailSender) SendEmailWithContext(_ context.Context, message *newm
 
 // send a Gmail message
 func (s *gmailEmailSender) send(message *gmail.Message) (*gmail.Message, error) {
-	if s.messageSender == nil {
-		return nil, ErrNoUsersMessagesService
+	if s.users == nil {
+		return nil, ErrNoUsersService
 	}
 
-	user := s.user
-	if user == "" {
-		user = "me"
+	return s.users.Messages.Send(s.userID(), message).Do()
+}
+
+// userID returns the configured user or the default authenticated user
+func (s *gmailEmailSender) userID() string {
+	if s.user == "" {
+		return defaultUser
 	}
 
-	return s.messageSender.Send(user, message).Do()
+	return s.user
+}
+
+// Verify satisfies the EmailSender interface by fetching the profile of the configured user
+func (s *gmailEmailSender) Verify(ctx context.Context) error {
+	if s.users == nil {
+		return ErrNoUsersService
+	}
+
+	_, err := s.users.GetProfile(s.userID()).Context(ctx).Do()
+
+	switch {
+	case err == nil, isInsufficientScope(err):
+		return nil
+	default:
+		return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+	}
+}
+
+// isInsufficientScope reports whether err is a 403 caused by the token lacking the read scope
+func isInsufficientScope(err error) bool {
+	var apiErr *googleapi.Error
+	if !errors.As(err, &apiErr) || apiErr.Code != http.StatusForbidden {
+		return false
+	}
+
+	return slices.ContainsFunc(apiErr.Errors, func(item googleapi.ErrorItem) bool {
+		return item.Reason == insufficientPermissionsReason
+	})
 }
 
 // addBCCRecipients adds BCC recipients to the message
@@ -114,7 +156,7 @@ func NewWithOauth2(ctx context.Context, configJSON []byte, tokenManager TokenMan
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{users: srv.Users, user: user}, nil
 }
 
 // NewWithServiceAccount initializes a new gmailEmailSenderServiceAccount instance using service account JSON credentials
@@ -134,7 +176,7 @@ func NewWithServiceAccount(ctx context.Context, jsonCredentials []byte, user str
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{users: srv.Users, user: user}, nil
 }
 
 // NewWithAPIKey initializes a new gmailEmailSenderAPIKey instance using an API key
@@ -144,7 +186,7 @@ func NewWithAPIKey(ctx context.Context, apiKey, user string) (newman.EmailSender
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{users: srv.Users, user: user}, nil
 }
 
 // NewWithJWTConfig initializes a new gmailEmailSenderJWT instance using JWT configuration
@@ -161,7 +203,7 @@ func NewWithJWTConfig(ctx context.Context, configJSON []byte, user string) (newm
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{users: srv.Users, user: user}, nil
 }
 
 // NewWithJWTAccess initializes a new gmailEmailSenderJWTAccess instance using a JWT access token
@@ -176,5 +218,5 @@ func NewWithJWTAccess(ctx context.Context, jsonCredentials []byte, user string) 
 		return nil, ErrUnableToStartGmailService
 	}
 
-	return &gmailEmailSender{messageSender: srv.Users.Messages, user: user}, nil
+	return &gmailEmailSender{users: srv.Users, user: user}, nil
 }

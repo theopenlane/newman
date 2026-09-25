@@ -2,13 +2,20 @@ package sendgrid
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 
+	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"github.com/theopenlane/newman"
 	"github.com/theopenlane/newman/scrubber"
+)
+
+const (
+	scopesEndpoint = "/v3/scopes"
 )
 
 // sendGridEmailSender defines a struct for sending emails using the SendGrid API
@@ -120,6 +127,31 @@ func (s *sendGridEmailSender) SendEmailWithContext(ctx context.Context, message 
 
 	if response.StatusCode >= http.StatusBadRequest {
 		return ErrFailedToSendEmail
+	}
+
+	return nil
+}
+
+// Verify satisfies the EmailSender interface by listing the scopes granted to the API key
+func (s *sendGridEmailSender) Verify(ctx context.Context) error {
+	scopesURL, err := url.Parse(s.client.BaseURL)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+	}
+
+	scopesURL.Path = scopesEndpoint
+
+	response, err := sendgrid.MakeRequestWithContext(ctx, rest.Request{
+		Method:  rest.Get,
+		BaseURL: scopesURL.String(),
+		Headers: s.client.Headers,
+	})
+
+	switch {
+	case err != nil:
+		return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+	case response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices:
+		return fmt.Errorf("%w: http %d: %s", ErrVerifyFailed, response.StatusCode, response.Body)
 	}
 
 	return nil

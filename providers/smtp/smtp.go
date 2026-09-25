@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/smtp"
 
 	"github.com/theopenlane/newman"
@@ -13,6 +14,8 @@ const (
 	defaultConnectionMethod = "IMPLICIT"
 	TLSConnection           = "TLS"
 	CRAMMD5Auth             = "CRAM-MD5"
+	tcpNetwork              = "tcp"
+	startTLSExtension       = "STARTTLS"
 )
 
 // smtpEmailSender is responsible for sending emails using SMTP
@@ -81,10 +84,7 @@ func (s *smtpEmailSender) SendEmailWithContext(ctx context.Context, message *new
 		return err
 	}
 
-	auth := smtp.PlainAuth("", s.user, s.password, s.host)
-	if s.authMethod == CRAMMD5Auth {
-		auth = smtp.CRAMMD5Auth(s.user, s.password)
-	}
+	auth := s.auth()
 
 	if s.connectionMethod == TLSConnection {
 		return s.secureSend(ctx, auth, message.GetFrom(), sendMailTo, msg)
@@ -93,22 +93,101 @@ func (s *smtpEmailSender) SendEmailWithContext(ctx context.Context, message *new
 	return s.send(auth, message.GetFrom(), sendMailTo, msg)
 }
 
-func (s *smtpEmailSender) send(auth smtp.Auth, from string, to []string, message []byte) error {
-	return smtp.SendMail(fmt.Sprintf("%s:%d", s.host, s.port), auth, from, to, message)
-}
+// Verify satisfies the EmailSender interface by connecting and authenticating without sending mail
+func (s *smtpEmailSender) Verify(ctx context.Context) error {
+	var (
+		conn net.Conn
+		err  error
+	)
 
-func (s *smtpEmailSender) secureSend(ctx context.Context, auth smtp.Auth, from string, to []string, message []byte) error {
-	tlsConfig := s.tlsConfig
-	if tlsConfig == nil {
-		tlsConfig = &tls.Config{
-			ServerName: s.host,
-			MinVersion: tls.VersionTLS12,
+	switch s.connectionMethod {
+	case TLSConnection:
+		dialer := tls.Dialer{Config: s.clientTLSConfig()}
+		conn, err = dialer.DialContext(ctx, tcpNetwork, s.address())
+	default:
+		var dialer net.Dialer
+		conn, err = dialer.DialContext(ctx, tcpNetwork, s.address())
+	}
+
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+	}
+
+	stop := context.AfterFunc(ctx, func() { conn.Close() })
+	defer stop()
+
+	client, err := smtp.NewClient(conn, s.host)
+	if err != nil {
+		conn.Close()
+
+		return verifyError(ctx, err)
+	}
+
+	defer client.Close()
+
+	if s.connectionMethod != TLSConnection {
+		if ok, _ := client.Extension(startTLSExtension); ok {
+			if err = client.StartTLS(s.clientTLSConfig()); err != nil {
+				return verifyError(ctx, err)
+			}
 		}
 	}
 
-	dialer := tls.Dialer{Config: tlsConfig}
+	if err = client.Auth(s.auth()); err != nil {
+		return verifyError(ctx, err)
+	}
 
-	conn, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", s.host, s.port))
+	if err = client.Quit(); err != nil {
+		return verifyError(ctx, err)
+	}
+
+	return nil
+}
+
+// verifyError wraps err with ErrVerifyFailed, adding the context error when ctx is done
+func verifyError(ctx context.Context, err error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return fmt.Errorf("%w: %w: %w", ErrVerifyFailed, ctxErr, err)
+	}
+
+	return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+}
+
+// auth returns the smtp.Auth for the configured auth method
+func (s *smtpEmailSender) auth() smtp.Auth {
+	switch s.authMethod {
+	case CRAMMD5Auth:
+		return smtp.CRAMMD5Auth(s.user, s.password)
+	default:
+		return smtp.PlainAuth("", s.user, s.password, s.host)
+	}
+}
+
+// clientTLSConfig returns the configured TLS settings or a default config for the host
+func (s *smtpEmailSender) clientTLSConfig() *tls.Config {
+	if s.tlsConfig != nil {
+		return s.tlsConfig
+	}
+
+	return &tls.Config{
+		ServerName: s.host,
+		MinVersion: tls.VersionTLS12,
+	}
+}
+
+// address returns the host:port of the SMTP server
+func (s *smtpEmailSender) address() string {
+	return fmt.Sprintf("%s:%d", s.host, s.port)
+}
+
+func (s *smtpEmailSender) send(auth smtp.Auth, from string, to []string, message []byte) error {
+	return smtp.SendMail(s.address(), auth, from, to, message)
+}
+
+func (s *smtpEmailSender) secureSend(ctx context.Context, auth smtp.Auth, from string, to []string, message []byte) error {
+	dialer := tls.Dialer{Config: s.clientTLSConfig()}
+
+	conn, err := dialer.DialContext(ctx, tcpNetwork, s.address())
 	if err != nil {
 		return err
 	}

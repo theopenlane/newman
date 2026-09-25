@@ -445,3 +445,74 @@ func TestSendEmailRetryable(t *testing.T) {
 	assert.Error(t, err)
 	assert.True(t, newman.IsRetryableError(err))
 }
+
+func TestVerify(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/domains", r.URL.Path)
+		assert.Equal(t, "Bearer "+apiKey, r.Header.Get("Authorization"))
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"object": "list", "data": [], "has_more": false}`))
+	}))
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	mc.BaseURL = baseURL
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	assert.NoError(t, emailSender.Verify(context.Background()))
+}
+
+func TestVerifyUnauthorized(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"statusCode": 401, "name": "validation_error", "message": "API key is invalid"}`))
+	}))
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	mc.BaseURL = baseURL
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	err = emailSender.Verify(context.Background())
+	assert.ErrorIs(t, err, ErrVerifyFailed)
+	assert.ErrorContains(t, err, "API key is invalid")
+}
+
+func TestVerifyRestrictedKey(t *testing.T) {
+	apiKey := "re_send_api_key" // #nosec G101
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"statusCode":401,"name":"restricted_api_key","message":"This API key is restricted to only send emails"}`))
+	}))
+	defer ts.Close()
+
+	mc := resend.NewClient(apiKey)
+	baseURL, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	mc.BaseURL = baseURL
+
+	emailSender, err := New(apiKey, WithClient(mc))
+	require.NoError(t, err)
+
+	assert.NoError(t, emailSender.Verify(context.Background()))
+}

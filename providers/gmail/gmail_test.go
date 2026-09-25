@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,8 +84,8 @@ func buildMockGmailMessageSenderWrapper(err error) *gmailEmailSender {
 	}))
 
 	return &gmailEmailSender{
-		messageSender: mockGmailService.Users.Messages,
-		user:          "me",
+		users: mockGmailService.Users,
+		user:  "me",
 	}
 }
 
@@ -165,7 +166,7 @@ func TestNewGmailEmailSenderOauth2(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, user, gmailSender.user)
-	assert.NotNil(t, gmailSender.messageSender)
+	assert.NotNil(t, gmailSender.users)
 }
 
 func TestGmailEmailSenderOauth2GetGmailMessageSender(t *testing.T) {
@@ -231,7 +232,7 @@ func TestNewGmailEmailSenderServiceAccount(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, user, gmailSender.user)
-	assert.NotNil(t, gmailSender.messageSender)
+	assert.NotNil(t, gmailSender.users)
 }
 
 func TestGmailEmailSenderServiceAccountGetGmailMessageSender(t *testing.T) {
@@ -265,7 +266,7 @@ func TestNewGmailEmailSenderAPIKey(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, user, gmailSender.user)
-	assert.NotNil(t, gmailSender.messageSender)
+	assert.NotNil(t, gmailSender.users)
 }
 
 func TestGmailEmailSenderAPIKeyGetGmailMessageSender(t *testing.T) {
@@ -299,7 +300,7 @@ func TestNewGmailEmailSenderJWT(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, user, gmailSender.user)
-	assert.NotNil(t, gmailSender.messageSender)
+	assert.NotNil(t, gmailSender.users)
 }
 
 func TestGmailEmailSenderJWTGetGmailMessageSender(t *testing.T) {
@@ -346,6 +347,63 @@ func TestSendEmailWithNilGmailService(t *testing.T) {
 	err := emailSender.SendEmail(message)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send email")
+}
+
+// buildHTTPTestGmailSender builds a gmailEmailSender whose service points at an httptest server
+func buildHTTPTestGmailSender(t *testing.T, handler http.HandlerFunc) *gmailEmailSender {
+	t.Helper()
+
+	ts := httptest.NewServer(handler)
+	t.Cleanup(ts.Close)
+
+	srv, err := gmail.NewService(context.Background(), option.WithHTTPClient(ts.Client()), option.WithEndpoint(ts.URL+"/"))
+	require.NoError(t, err)
+
+	return &gmailEmailSender{users: srv.Users, user: "me"}
+}
+
+func TestVerify(t *testing.T) {
+	emailSender := buildHTTPTestGmailSender(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/gmail/v1/users/me/profile", r.URL.Path)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		_, err := w.Write([]byte(`{"emailAddress": "newman@usps.com", "messagesTotal": 1}`))
+		assert.NoError(t, err)
+	})
+
+	require.NoError(t, emailSender.Verify(context.Background()))
+}
+
+func TestVerifyUnauthorized(t *testing.T) {
+	emailSender := buildHTTPTestGmailSender(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		_, err := w.Write([]byte(`{"error": {"code": 401, "message": "Request had invalid authentication credentials."}}`))
+		assert.NoError(t, err)
+	})
+
+	err := emailSender.Verify(context.Background())
+	require.ErrorIs(t, err, ErrVerifyFailed)
+	assert.Contains(t, err.Error(), "invalid authentication credentials")
+}
+
+func TestVerifyInsufficientScope(t *testing.T) {
+	emailSender := buildHTTPTestGmailSender(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/gmail/v1/users/newman@usps.com/profile", r.URL.Path)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+
+		_, err := w.Write([]byte(`{"error": {"code": 403, "message": "Request had insufficient authentication scopes.", "errors": [{"message": "Insufficient Permission", "domain": "global", "reason": "insufficientPermissions"}], "status": "PERMISSION_DENIED"}}`))
+		assert.NoError(t, err)
+	})
+	emailSender.user = "newman@usps.com"
+
+	require.NoError(t, emailSender.Verify(context.Background()))
 }
 
 func TestNewGmailEmailSenderServiceAccountInvalidJson(t *testing.T) {
