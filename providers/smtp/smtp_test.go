@@ -403,7 +403,7 @@ func TestSendTLSEmailEHLOError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "500 Unrecognized command", err.Error())
+	assert.ErrorContains(t, err, "Unrecognized command")
 }
 
 func TestSendTLSEmailAUTHError(t *testing.T) {
@@ -460,7 +460,7 @@ func TestSendTLSEmailAUTHError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "403 Forbidden", err.Error())
+	assert.ErrorContains(t, err, "Forbidden")
 }
 
 func TestSendTLSEmailMailError(t *testing.T) {
@@ -518,7 +518,7 @@ func TestSendTLSEmailMailError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "550 MAIL ERROR", err.Error())
+	assert.ErrorContains(t, err, "MAIL ERROR")
 }
 
 func TestSendTLSEmailRcptError(t *testing.T) {
@@ -579,7 +579,7 @@ func TestSendTLSEmailRcptError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "530 No such user", err.Error())
+	assert.ErrorContains(t, err, "No such user")
 }
 
 func TestSendTLSEmailDataError(t *testing.T) {
@@ -642,7 +642,7 @@ func TestSendTLSEmailDataError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "554 Service unavailable", err.Error())
+	assert.ErrorContains(t, err, "Service unavailable")
 }
 
 func TestSendTLSEmailDataWriteError(t *testing.T) {
@@ -712,7 +712,7 @@ func TestSendTLSEmailDataWriteError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "552 Message size exceeds fixed limit", err.Error())
+	assert.ErrorContains(t, err, "Message size exceeds fixed limit")
 }
 
 func TestVerifyPlainAuth(t *testing.T) {

@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	testDomain = "usps.com"
-	testAPIKey = "test-api-key" // #nosec G101
+	testDomain     = "usps.com"
+	testAPIKey     = "test-api-key" // #nosec G101
+	testAPIVersion = "/v3"
 )
 
 // TestEmailSenderImplementation checks if mailgunEmailSender implements the EmailSender interface
@@ -34,7 +35,7 @@ func newTestSender(t *testing.T, handler http.HandlerFunc) *mailgunEmailSender {
 	mg, ok := emailSender.(*mailgunEmailSender)
 	require.True(t, ok)
 
-	mg.client.SetAPIBase(ts.URL)
+	mg.client.SetAPIBase(ts.URL + testAPIVersion)
 
 	return mg
 }
@@ -42,7 +43,7 @@ func newTestSender(t *testing.T, handler http.HandlerFunc) *mailgunEmailSender {
 func TestVerify(t *testing.T) {
 	mg := newTestSender(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
-		assert.Equal(t, "/domains/"+testDomain, r.URL.Path)
+		assert.Equal(t, testAPIVersion+"/domains/"+testDomain, r.URL.Path)
 
 		user, password, ok := r.BasicAuth()
 		assert.True(t, ok)
@@ -84,7 +85,7 @@ func TestVerifyDomainMissing(t *testing.T) {
 	mg, ok := emailSender.(*mailgunEmailSender)
 	require.True(t, ok)
 
-	mg.client.SetAPIBase(ts.URL)
+	mg.client.SetAPIBase(ts.URL + testAPIVersion)
 
 	require.ErrorIs(t, mg.Verify(context.Background()), ErrDomainMissing)
 }
