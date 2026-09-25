@@ -52,6 +52,18 @@ func TestNewEmailMessageWithOptions(t *testing.T) {
 	assert.Empty(t, emailMessage.GetCC())
 }
 
+func TestNewEmailMessageWithOptionsKeepsAttachments(t *testing.T) {
+	attachment := NewAttachment("test.txt", []byte("test content"))
+
+	emailMessage := NewEmailMessageWithOptions(
+		WithFrom("newman@usps.com"),
+		WithTo([]string{"jerry@seinfeld.com"}),
+		WithAttachment(attachment),
+	)
+
+	assert.Equal(t, []*Attachment{attachment}, emailMessage.GetAttachments())
+}
+
 func TestNewAttachment(t *testing.T) {
 	filename := "test.txt"
 	content := []byte("test content")

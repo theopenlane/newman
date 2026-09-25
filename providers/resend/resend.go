@@ -16,6 +16,9 @@ import (
 	"github.com/theopenlane/newman/shared"
 )
 
+// restrictedKeyMessage is the Resend SDK error text returned for a valid sending-access API key
+const restrictedKeyMessage = "restricted to only send emails"
+
 // resendEmailSender represents a type that is responsible for sending email messages using the Resend service
 type resendEmailSender struct {
 	client             *resend.Client
@@ -216,4 +219,16 @@ func (s *resendEmailSender) SendEmailWithContext(ctx context.Context, message *n
 	}
 
 	return nil
+}
+
+// Verify satisfies the EmailSender interface by listing the domains visible to the API key
+func (s *resendEmailSender) Verify(ctx context.Context) error {
+	_, err := s.client.Domains.ListWithContext(ctx)
+
+	switch {
+	case err == nil, strings.Contains(err.Error(), restrictedKeyMessage):
+		return nil
+	default:
+		return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+	}
 }
