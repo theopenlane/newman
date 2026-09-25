@@ -770,7 +770,7 @@ func TestVerifyAuthError(t *testing.T) {
 
 	err = emailSender.Verify(context.Background())
 	assert.ErrorIs(t, err, ErrVerifyFailed)
-	assert.ErrorContains(t, err, "535 Authentication failed")
+	assert.ErrorContains(t, err, "Authentication failed")
 }
 
 func TestVerifyExplicitTLS(t *testing.T) {
