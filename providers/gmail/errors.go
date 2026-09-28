@@ -5,8 +5,8 @@ import "errors"
 var (
 	// ErrFailedToSendEmail is returned when an email fails to send
 	ErrFailedToSendEmail = errors.New("failed to send email")
-	// ErrNoUsersMessagesService is returned when no UsersMessagesService is initiated
-	ErrNoUsersMessagesService = errors.New("no UsersMessagesService initiated")
+	// ErrNoUsersService is returned when no UsersService is initiated
+	ErrNoUsersService = errors.New("no UsersService initiated")
 	// ErrUnableToBuildMIMEMessage is returned when a MIME message fails to be built
 	ErrUnableToBuildMIMEMessage = errors.New("unable to build MIME message")
 	// ErrUnableToStartGmailService is returned when a Gmail service fails to start
@@ -19,4 +19,6 @@ var (
 	ErrInvalidToken = errors.New("invalid token")
 	// ErrMockServiceError is returned when a mock service encounters an error
 	ErrMockServiceError = errors.New("mock service error")
+	// ErrVerifyFailed is returned when Gmail rejects the configured credentials
+	ErrVerifyFailed = errors.New("failed to verify gmail credentials")
 )

@@ -105,6 +105,11 @@ func (s *EmailSender) SendEmailWithContext(_ context.Context, message *newman.Em
 	return nil
 }
 
+// Verify satisfies the EmailSender interface and always returns nil
+func (s *EmailSender) Verify(context.Context) error {
+	return nil
+}
+
 // saveEmailToFile for manual inspection
 func (s *EmailSender) saveEmailToFile(message *newman.EmailMessage) error {
 	// we have already validated the message contains at least one recipient

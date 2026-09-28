@@ -62,3 +62,11 @@ func TestRetryableErrorUnwrapping(t *testing.T) {
 	normalErr := errors.New("validation failed")
 	assert.False(t, errors.As(normalErr, &err))
 }
+
+func TestRetryableErrorIsReason(t *testing.T) {
+	sentinel := errors.New("rate limit exceeded")
+	err := NewRetryableError(sentinel)
+
+	assert.ErrorIs(t, err, sentinel)
+	assert.True(t, IsRetryableError(err))
+}

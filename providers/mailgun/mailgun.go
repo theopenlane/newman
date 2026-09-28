@@ -65,3 +65,17 @@ func (s *mailgunEmailSender) SendEmailWithContext(ctx context.Context, message *
 
 	return nil
 }
+
+// Verify satisfies the EmailSender interface by fetching the configured sending domain
+func (s *mailgunEmailSender) Verify(ctx context.Context) error {
+	domain := s.client.Domain()
+	if domain == "" {
+		return ErrDomainMissing
+	}
+
+	if _, err := s.client.GetDomain(ctx, domain); err != nil {
+		return fmt.Errorf("%w: %w", ErrVerifyFailed, err)
+	}
+
+	return nil
+}

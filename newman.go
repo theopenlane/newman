@@ -16,6 +16,8 @@ type EmailSender interface {
 	SendBatchEmail(messages []*EmailMessage) error
 	// SendBatchEmailWithContext sends a batch of emails with the given messages and context
 	SendBatchEmailWithContext(ctx context.Context, messages []*EmailMessage) error
+	// Verify checks that the configured credentials are accepted by the provider without sending mail
+	Verify(ctx context.Context) error
 }
 
 // EmailMessage represents an email message
@@ -37,6 +39,8 @@ func NewEmailMessageWithOptions(options ...MessageOption) *EmailMessage {
 	s := EmailMessage{
 		Headers: map[string]string{},
 	}
+
+	s.SetMaxAttachmentSize(shared.DefaultMaxAttachmentSize)
 
 	for _, option := range options {
 		option(&s)

@@ -1,6 +1,5 @@
 [![Build status](https://badge.buildkite.com/97ed7beda0c4aca086a7b4d439855bef106e4a7bdac5c32dbd.svg)](https://buildkite.com/theopenlane/newman)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=theopenlane_newman&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=theopenlane_newman)
-[![Go Report Card](https://goreportcard.com/badge/github.com/theopenlane/newman)](https://goreportcard.com/report/github.com/theopenlane/newman)
 [![Go Reference](https://pkg.go.dev/badge/github.com/theopenlane/newman.svg)](https://pkg.go.dev/github.com/theopenlane/newman)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache2.0-brightgreen.svg)](https://opensource.org/licenses/Apache-2.0)
 

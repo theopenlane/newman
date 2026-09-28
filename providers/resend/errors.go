@@ -13,4 +13,6 @@ var (
 	ErrMissingAPIKey = errors.New("missing API key")
 	// ErrEmptyBatch is returned when an empty batch is provided
 	ErrEmptyBatch = errors.New("batch must contain at least one message")
+	// ErrVerifyFailed is returned when Resend rejects the configured API key
+	ErrVerifyFailed = errors.New("failed to verify resend credentials")
 )

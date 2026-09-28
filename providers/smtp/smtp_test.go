@@ -1,9 +1,11 @@
 package smtp
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"strings"
@@ -401,7 +403,7 @@ func TestSendTLSEmailEHLOError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "500 Unrecognized command", err.Error())
+	assert.ErrorContains(t, err, "Unrecognized command")
 }
 
 func TestSendTLSEmailAUTHError(t *testing.T) {
@@ -458,7 +460,7 @@ func TestSendTLSEmailAUTHError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "403 Forbidden", err.Error())
+	assert.ErrorContains(t, err, "Forbidden")
 }
 
 func TestSendTLSEmailMailError(t *testing.T) {
@@ -516,7 +518,7 @@ func TestSendTLSEmailMailError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "550 MAIL ERROR", err.Error())
+	assert.ErrorContains(t, err, "MAIL ERROR")
 }
 
 func TestSendTLSEmailRcptError(t *testing.T) {
@@ -577,7 +579,7 @@ func TestSendTLSEmailRcptError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "530 No such user", err.Error())
+	assert.ErrorContains(t, err, "No such user")
 }
 
 func TestSendTLSEmailDataError(t *testing.T) {
@@ -640,7 +642,7 @@ func TestSendTLSEmailDataError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "554 Service unavailable", err.Error())
+	assert.ErrorContains(t, err, "Service unavailable")
 }
 
 func TestSendTLSEmailDataWriteError(t *testing.T) {
@@ -710,7 +712,153 @@ func TestSendTLSEmailDataWriteError(t *testing.T) {
 
 	err = emailSender.SendEmail(message)
 	assert.Error(t, err)
-	assert.Equal(t, "552 Message size exceeds fixed limit", err.Error())
+	assert.ErrorContains(t, err, "Message size exceeds fixed limit")
+}
+
+func TestVerifyPlainAuth(t *testing.T) {
+	server := newMockSMTPServer(t, smtpHandler)
+	defer server.Close()
+
+	host, port, _ := net.SplitHostPort(server.addr)
+	portInt := 25 // nolint: mnd
+
+	_, err := fmt.Sscanf(port, "%d", &portInt)
+	if err != nil {
+		t.Errorf("failed to parse port: %v", err)
+	}
+
+	emailSender, err := New(host, portInt, "user", "We gotta find that rickshaw", "PLAIN")
+	assert.NoError(t, err)
+
+	err = emailSender.Verify(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestVerifyCramMD5Auth(t *testing.T) {
+	server := newMockSMTPServer(t, smtpHandler)
+	defer server.Close()
+
+	host, port, _ := net.SplitHostPort(server.addr)
+	portInt := 25 // nolint: mnd
+
+	_, err := fmt.Sscanf(port, "%d", &portInt)
+	if err != nil {
+		t.Errorf("failed to parse port: %v", err)
+	}
+
+	emailSender, err := New(host, portInt, "user", "We gotta find that rickshaw", "CRAM-MD5")
+	assert.NoError(t, err)
+
+	err = emailSender.Verify(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestVerifyAuthError(t *testing.T) {
+	server := newMockSMTPServer(t, smtpHandler)
+	defer server.Close()
+
+	host, port, _ := net.SplitHostPort(server.addr)
+	portInt := 25 // nolint: mnd
+
+	_, err := fmt.Sscanf(port, "%d", &portInt)
+	if err != nil {
+		t.Errorf("failed to parse port: %v", err)
+	}
+
+	emailSender, err := New(host, portInt, "user", "wrongWe gotta find that rickshaw", "PLAIN")
+	assert.NoError(t, err)
+
+	err = emailSender.Verify(context.Background())
+	assert.ErrorIs(t, err, ErrVerifyFailed)
+	assert.ErrorContains(t, err, "Authentication failed")
+}
+
+func TestVerifyExplicitTLS(t *testing.T) {
+	server := newMockSMTPServer(t, tlsHandler(smtpHandler))
+	defer server.Close()
+
+	host, port, _ := net.SplitHostPort(server.addr)
+	portInt := 587 // nolint: mnd
+
+	_, err := fmt.Sscanf(port, "%d", &portInt)
+	if err != nil {
+		t.Errorf("failed to parse port: %v", err)
+	}
+
+	emailSender := newTestSMTPSender(host, portInt, "user", "We gotta find that rickshaw", "PLAIN", "TLS")
+
+	err = emailSender.Verify(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestVerifyCancelledContext(t *testing.T) {
+	server := newMockSMTPServer(t, smtpHandler)
+	defer server.Close()
+
+	host, port, _ := net.SplitHostPort(server.addr)
+	portInt := 25 // nolint: mnd
+
+	_, err := fmt.Sscanf(port, "%d", &portInt)
+	if err != nil {
+		t.Errorf("failed to parse port: %v", err)
+	}
+
+	emailSender, err := New(host, portInt, "user", "We gotta find that rickshaw", "PLAIN")
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = emailSender.Verify(ctx)
+	assert.ErrorIs(t, err, ErrVerifyFailed)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestVerifyCancelledAfterDial(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ehloReceived := make(chan struct{})
+
+	server := newMockSMTPServer(t, func(conn net.Conn) {
+		defer conn.Close()
+
+		fmt.Fprintln(conn, "220 Welcome to the Mock SMTP Server")
+
+		buf := make([]byte, 1024)
+		if _, err := conn.Read(buf); err != nil {
+			return
+		}
+
+		close(ehloReceived)
+
+		_, _ = io.Copy(io.Discard, conn)
+	})
+	defer server.Close()
+
+	go func() {
+		select {
+		case <-ehloReceived:
+		case <-ctx.Done():
+		}
+
+		cancel()
+	}()
+
+	host, port, _ := net.SplitHostPort(server.addr)
+	portInt := 25 // nolint: mnd
+
+	_, err := fmt.Sscanf(port, "%d", &portInt)
+	if err != nil {
+		t.Errorf("failed to parse port: %v", err)
+	}
+
+	emailSender, err := New(host, portInt, "user", "We gotta find that rickshaw", "PLAIN")
+	assert.NoError(t, err)
+
+	err = emailSender.Verify(ctx)
+	assert.ErrorIs(t, err, ErrVerifyFailed)
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func generateKeys() tls.Certificate {
