@@ -124,8 +124,8 @@ github.com/theopenlane/utils v0.7.0 h1:tSN9PBC8Ywn2As3TDW/1TAfWsVsodrccec40oAhiZ
 github.com/theopenlane/utils v0.7.0/go.mod h1:7U9CDoVzCAFWw/JygR5ZhCKGwhHBnuJpK3Jgh1m59+w=
 github.com/vanng822/css v1.0.1 h1:10yiXc4e8NI8ldU6mSrWmSWMuyWgPr9DZ63RSlsgDw8=
 github.com/vanng822/css v1.0.1/go.mod h1:tcnB1voG49QhCrwq1W0w5hhGasvOg+VQp9i9H1rCM1w=
-github.com/vanng822/go-premailer v1.36.0 h1:EG7KQkzjPqDbID4unZU62P6zWOVqjv7GszCD0DXhiv8=
-github.com/vanng822/go-premailer v1.36.0/go.mod h1:k6sEAVkOMxwN0STI7i/+FjRvHEMsmTtfCDDAyylOS4c=
+github.com/vanng822/go-premailer v1.37.0 h1:Mfe0V6RLXC6xQisBccDi/eSnz0FlLvSU9G21oQg4XpE=
+github.com/vanng822/go-premailer v1.37.0/go.mod h1:YhPj3JGaNpIf5RrxGSsWYkgHc5EGLUW3mCSxvAuQQi4=
 github.com/yuin/goldmark v1.8.6 h1:d0VcaP1sx9GkFVkoW+KtggpGi2KZ965i14b0+bDQST4=
 github.com/yuin/goldmark v1.8.6/go.mod h1:ip/1k0VRfGynBgxOz0yCqHrbZXhcjxyuS66Brc7iBKg=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
