@@ -11,7 +11,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/stretchr/testify v1.12.1
 	github.com/theopenlane/httpsling v0.3.0
-	github.com/vanng822/go-premailer v1.36.0
+	github.com/vanng822/go-premailer v1.37.0
 	github.com/yuin/goldmark v1.8.6
 	golang.org/x/oauth2 v0.37.0
 	google.golang.org/api v0.299.0
