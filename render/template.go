@@ -12,7 +12,7 @@ import (
 // dateFuncs are the sprig date helpers kept for templates, they only read the clock
 var dateFuncs = []string{"date", "date_in_zone", "date_modify", "now", "htmlDate", "htmlDateInZone", "dateInZone", "dateModify"}
 
-// sprigFuncs returns sprig's hermetic functions plus its date helpers, so env, expandenv, and getHostByName are never available
+// sprigFuncs returns sprig's hermetic functions plus its date helpers, so variables like env, expandenv, and getHostByName are never available
 func sprigFuncs() map[string]any {
 	funcs := map[string]any(sprig.HermeticTxtFuncMap())
 	generic := sprig.GenericFuncMap()
