@@ -574,4 +574,3 @@ func TestGetAttachmentsWithEdgeCases(t *testing.T) {
 		assert.Equal(t, email.Attachments, result)
 	})
 }
-

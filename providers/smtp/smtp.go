@@ -106,6 +106,7 @@ func (s *smtpEmailSender) Verify(ctx context.Context) error {
 		conn, err = dialer.DialContext(ctx, tcpNetwork, s.address())
 	default:
 		var dialer net.Dialer
+
 		conn, err = dialer.DialContext(ctx, tcpNetwork, s.address())
 	}
 
