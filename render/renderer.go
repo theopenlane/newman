@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	texttemplate "text/template"
-
-	"github.com/Masterminds/sprig/v3"
 )
 
 // Renderer generates themed HTML and plain text email output from an EmailContent value
@@ -109,7 +107,7 @@ func LinkWithColor(href, text, color string) template.HTML {
 // templateBase returns a base template pre-loaded with sprig functions and custom
 // helpers for URL, CSS, and raw HTML handling in email templates
 func templateBase() *template.Template {
-	return template.New("").Funcs(sprig.FuncMap()).Funcs(template.FuncMap{
+	return template.New("").Funcs(template.FuncMap(sprigFuncs())).Funcs(template.FuncMap{
 		"url": func(s string) template.URL {
 			return template.URL(s) //nolint:gosec // template helper for trusted URL values
 		},
@@ -132,7 +130,7 @@ func templateBase() *template.Template {
 // textTemplateBase returns a base text/template pre-loaded with sprig functions
 // and plain-text equivalents of the HTML helpers, for use in plain text rendering
 func textTemplateBase() *texttemplate.Template {
-	return texttemplate.New("").Funcs(sprig.TxtFuncMap()).Funcs(texttemplate.FuncMap{
+	return texttemplate.New("").Funcs(texttemplate.FuncMap(sprigFuncs())).Funcs(texttemplate.FuncMap{
 		"url":  func(s string) string { return s },
 		"bold": func(s string) string { return s },
 		"link": func(href, text string) string { return text + " (" + href + ")" },

@@ -9,6 +9,21 @@ import (
 	"github.com/vanng822/go-premailer/premailer"
 )
 
+// dateFuncs are the sprig date helpers kept for templates, they only read the clock
+var dateFuncs = []string{"date", "date_in_zone", "date_modify", "now", "htmlDate", "htmlDateInZone", "dateInZone", "dateModify"}
+
+// sprigFuncs returns sprig's hermetic functions plus its date helpers, so env, expandenv, and getHostByName are never available
+func sprigFuncs() map[string]any {
+	funcs := map[string]any(sprig.HermeticTxtFuncMap())
+	generic := sprig.GenericFuncMap()
+
+	for _, name := range dateFuncs {
+		funcs[name] = generic[name]
+	}
+
+	return funcs
+}
+
 // ExecuteTextTemplate parses and executes a text/template string with sprig
 // template functions against the provided data map
 func ExecuteTextTemplate(name, tmplStr string, data map[string]any) (string, error) {
@@ -16,7 +31,7 @@ func ExecuteTextTemplate(name, tmplStr string, data map[string]any) (string, err
 		return "", nil
 	}
 
-	tmpl, err := texttemplate.New(name).Funcs(texttemplate.FuncMap(sprig.TxtFuncMap())).Parse(tmplStr)
+	tmpl, err := texttemplate.New(name).Funcs(texttemplate.FuncMap(sprigFuncs())).Parse(tmplStr)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrTemplateParsingFailed, err)
 	}
