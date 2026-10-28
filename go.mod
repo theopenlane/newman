@@ -14,7 +14,7 @@ require (
 	github.com/vanng822/go-premailer v1.37.0
 	github.com/yuin/goldmark v1.8.6
 	golang.org/x/oauth2 v0.37.0
-	google.golang.org/api v0.309.0
+	google.golang.org/api v0.310.0
 )
 
 require (
