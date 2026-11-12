@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"html/template"
 
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/v2/extension"
+	"github.com/yuin/goldmark/v2/parser"
+	"github.com/yuin/goldmark/v2/renderer/html"
 )
 
 // EmailContent is the root object rendered against a theme template. Templates
@@ -222,14 +223,13 @@ func (m MarkdownContent) ToHTML() template.HTML {
 		return ""
 	}
 
-	md := goldmark.New(goldmark.WithExtensions(
-		extension.NewTable(),
-		extension.GFM,
-	))
+	source := []byte(m)
+	p := parser.New(parser.WithExtensions(extension.NewGFMParser()))
+	r := html.New(html.WithExtensions(extension.NewGFMHTMLRenderer()))
 
 	var buf bytes.Buffer
 
-	if err := md.Convert([]byte(m), &buf); err != nil {
+	if err := r.Render(&buf, source, p.Parse(source)); err != nil {
 		return template.HTML(m) //nolint:gosec // fallback: caller-supplied markdown returned as-is
 	}
 

@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/resend/resend-go/v3"
+	"github.com/resend/resend-go/v4"
 
 	"github.com/theopenlane/newman"
 	"github.com/theopenlane/newman/providers/mock"
