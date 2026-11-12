@@ -1,20 +1,20 @@
 env:
   SONAR_HOST: "https://sonarcloud.io"
 
-  # build settings
-  BK_HOME: /var/lib/buildkite-agent
-  GOCACHE: $BK_HOME/.cache/go-build
-  GOMODCACHE: $BK_HOME/.cache/go/pkg/mod
-  GOLANGCI_LINT_CACHE: $BK_HOME/.cache/golangci-lint
-  HOME: /tmp
-  GIT_CONFIG_GLOBAL: $HOME/.gitconfig
-  APOLLO_CONFIG_HOME: $HOME
-  SONAR_USER_HOME: $HOME/.sonar"
-  SCANNER_WORKDIR_PATH: $HOME/sonar-scanner-work
+  # build settings, default to what is in buldkite
+  CACHE_HOME: ${CACHE_HOME:-$CACHE_HOME/.cache}
+  GOCACHE: ${GOCACHE:-$CACHE_HOME/.cache/go-build}
+  GOMODCACHE: ${GOMODCACHE:-$BK_HOME/.cache/go/pkg/mod}
+  GOLANGCI_LINT_CACHE: ${GOLANGCI_LINT_CACHE:-$CACHE_HOME/.cache/golangci-lint}
+  CONFIG_HOME: ${CONFIG_HOME:-/tmp}
+  GIT_CONFIG_GLOBAL: ${GIT_CONFIG_GLOBAL:-$CONFIG_HOME/.gitconfig}
+  APOLLO_CONFIG_HOME: ${APOLLO_CONFIG_HOME:-$CONFIG_HOME}
+  SONAR_USER_HOME: ${SONAR_USER_HOME:-$CONFIG_HOME/.sonar}
+  SCANNER_WORKDIR_PATH: ${SCANNER_WORKDIR_PATH:-$CONFIG_HOME/sonar-scanner-work}
 
   # runner vars
-  LARGE_RUNNER_QUEUE: ${LARGE_RUNNER_QUEUE:-self-hosted-garage-vms}
-  SMALL_RUNNER_QUEUE: ${SMALL_RUNNER_QUEUE:-self-hosted-garage-vms}
+  LARGE_RUNNER_QUEUE: ${LARGE_RUNNER_QUEUE:-namespace}
+  SMALL_RUNNER_QUEUE: ${SMALL_RUNNER_QUEUE:-namespace}
   RUNNER_WORKLOAD_LIGHTWEIGHT: "lightweight"
   RUNNER_WORKLOAD_STANDARD: "standard"
 
@@ -22,15 +22,6 @@ env:
 agents:
   queue: $SMALL_RUNNER_QUEUE
   workload: $RUNNER_WORKLOAD_LIGHTWEIGHT
-
-# cache for hosted runners
-cache:
-  name: go-cache
-  size: 100g
-  paths:
-    - $GOCACHE
-    - $GOMODCACHE
-    - $GOLANGCI_LINT_CACHE
 
 steps:
   - group: ":test_tube: Tests"
@@ -71,7 +62,7 @@ steps:
           - cluster-secrets#v1.0.0:
               variables:
                 SONAR_TOKEN: SONAR_TOKEN
-          - artifacts#v1.9.4:
+          - artifacts#v1.11.0:
               download: "coverage.out"
               step: "go_test"
           - docker#v5.14.0:
@@ -88,7 +79,7 @@ steps:
           - cluster-secrets#v1.0.0:
               variables:
                 SONAR_TOKEN: SONAR_TOKEN
-          - artifacts#v1.9.4:
+          - artifacts#v1.11.0:
               download: coverage.out
               step: "go_test"
           - docker#v5.14.0:

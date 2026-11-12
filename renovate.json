@@ -1,23 +1,28 @@
 {
-  "extends": [
-    "config:base"
-  ],
-  "postUpdateOptions": [
-    "gomodTidy"
-  ],
-  "labels": [
-    "dependencies"
-  ],
-  "packageRules": [
-    {
-        "groupName": "all patch dependencies",
-        "groupSlug": "all-patch",
-        "matchPackageNames": [
-            "*"
-        ],
-        "matchUpdateTypes": [
-            "patch"
-        ]
-    }
-]
+    "extends": [
+        "config:recommended"
+    ],
+    "postUpdateOptions": [
+        "gomodTidy",
+        "gomodUpdateImportPaths"
+    ],
+    "gitIgnoredAuthors": [
+        "*bender*"
+    ],
+    "labels": [
+        "dependencies"
+    ],
+    "minimumReleaseAge": "7 days",
+    "packageRules": [
+        {
+            "groupName": "all patch dependencies",
+            "groupSlug": "all-patch",
+            "matchPackageNames": [
+                "*"
+            ],
+            "matchUpdateTypes": [
+                "patch"
+            ]
+        }
+    ]
 }
