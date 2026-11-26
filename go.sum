@@ -100,8 +100,8 @@ github.com/olekukonko/ll v0.1.9/go.mod h1:RPRC6UcscfFZgjo1nulkfMH5IM0QAYim0LfnMv
 github.com/olekukonko/tablewriter v1.1.5 h1:4LoZSfMySpMQY3PT8RWJsJeuEuMIoo9xGRgvmqjg6IQ=
 github.com/olekukonko/tablewriter v1.1.5/go.mod h1:+kedxuyTtgoZLwif3P1Em4hARJs+mVnzKxmsCL/C5RY=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/resend/resend-go/v4 v4.12.1 h1:/KQaLtxTWj9pDUIbT86iQWIb0nB11HOMnNAsKC+IpfY=
-github.com/resend/resend-go/v4 v4.12.1/go.mod h1:96jCV9Fb2HoQAnPOgGXURcbBZxCtLrul8e5iwKJ/E/g=
+github.com/resend/resend-go/v4 v4.13.0 h1:14CMG/03S/vv4UnlFYTqKXcYneQO8ozaFfWS01MH8u0=
+github.com/resend/resend-go/v4 v4.13.0/go.mod h1:96jCV9Fb2HoQAnPOgGXURcbBZxCtLrul8e5iwKJ/E/g=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/sendgrid/rest v2.6.9+incompatible h1:1EyIcsNdn9KIisLW50MKwmSRSK+ekueiEMJ7NEoxJo0=
